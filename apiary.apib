@@ -95,6 +95,33 @@ The API attempts to follow standard error responses. An error response will look
 
 Additionally, errors will have the HTTP Status Code set in the response headers.
 
+## Enveloping
+
+The current API response wraps the actual response data in an envelope containing the HTTP Status code
+and the "0" status. For example:
+
+```
+{
+    "status": 200,
+    "code": 0,
+    "data": {
+        "id": 1,
+        ...
+    }
+}
+```
+
+This will be removed soon and the "data" portion will be returned as the base response:
+
+```
+{
+    "id": 1,
+    ...
+}
+```
+
+We will send a notice ahead of time to API users when this change will be occurring.
+
 # Group Accounts
 
 ## Account [/accounts/{id}{?expand}]
@@ -1058,3 +1085,195 @@ checks against AWS services.
                 "account_admin": true,
                 "created": "2015-07-12T14:35:42.000Z"
             }
+            
+# Group Scanning APIs
+
+## Realtime Scan [/realtimes/{id}]
+
+The realtime API operates on a "submit and poll" model. Because CloudSploit
+scans can take up to 5 minutes to complete, we cannot return the results to
+the initial API call. Instead, after submitting a scan request, an ID is
+returned which can be used to poll for results.
+
+**IMPORTANT:**
+
+> Premium Plan users must submit a key_id of a previously connected
+and upgraded account within CloudSploit. API-Only (consultant plan) users can
+submit an arbitrary AWS role ARN and external ID (assuming the permissions are
+properly configured within the remote AWS account to allow CloudSploit access).
+
+### Create a Realtime Scan [POST]
+
+To trigger a new realtime scan, submit the `key_id` and `test_ids` you wish
+to use with the scan. The IDs of CloudSploit tests can be obtained by querying
+the `/tests` API (see above).
+
+The following properties should be submitted:
+
++ `key_id` (number) - The ID of the key to scan.
++ `test_ids` (array) - An array of test IDs to use in the scan (optional). If this property is not provided, all tests will be used.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+
+            {
+                "key_id": 1,
+                "test_ids": [1, 2, 3]
+            }
+
++ Response 200 (application/json)
+    + `realtime_id` (number) - The user ID
+    + `status` (string) - The current status of the scan.
+    
+    + Body
+
+            {
+                "realtime_id": 1,
+                "status": "CREATED"
+            }
+            
+### Poll for Realtime Scan Status [GET]
+
+After creating a scan, you will need to poll for the status of the scan. Typically,
+CloudSploit scans take anywhere from 10 seconds to 5 minutes to complete,
+depending on the size of your environment and the number of AWS API calls we need
+to make.
+
+**IMPORTANT:**
+
+> The maximum time allowed for a scan is 5 minutes. After that, the scan will time
+out and will need to be restarted. We have ocassionally run into elevated AWS API response
+latencies that cause the scan to time out (although this is rare). It is highly recommended
+that you have retry logic in place to attempt another scan in the event of a timeout. You
+will not be charged for timed-out scans.
+
+> When polling for scan status, it is not necessary to poll more than once every 10-15 seconds.
+If you exceed this rate, your requests may be rate-limited.
+
+There are a few possible options for the value of `status` in the response:
+
+* `IN_PROGRESS`
+* `COMPLETE`
+* `FAILED`
+* `CANCELLED`
+
+For `FAILED` and `CANCELLED` values, the `message` will contain a more detailed
+explanation for why the scan did not complete and the `results` will not be populated.
+When a scan is `IN_PROGRESS` or `COMPLETE` the `message` will be `null`.
+
++ Parameters
+    + id (number) - ID of the realtime scan
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `status` (string) - The user ID
+    + `message` (string) - The user's email address
+    + `results` (array) - The user's email address
+    
+    + Body
+
+            {
+                "status": "COMPLETE",
+                "message": null,
+                "results": [
+                    {
+                        "title": "CloudTrail Bucket Delete Policy",
+                        "category": "CloudTrail",
+                        "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
+                        "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
+                        "recommended_action": "Enable MFA delete on the CloudTrail bucket",
+                        "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
+                        "results": [
+                            {
+                                "status": 1,
+                                "message": "Bucket: cloudsploit-demo-bucket has MFA delete disabled",
+                                "region": "us-east-1",
+                                "resource": "cloudsploit-demo-bucket"
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+## CloudFormation Scan [/cloudformations]
+
+The realtime API operates on a "submit and poll" model. Because CloudSploit
+scans can take up to 5 minutes to complete, we cannot return the results to
+the initial API call. Instead, after submitting a scan request, an ID is
+returned which can be used to poll for results.
+
+### Create a CloudFormation Scan [POST]
+
+CloudFormation scans will return the scan results for a CloudFormation security
+risk check to the original request and do not need to be polled. You will need
+to submit the CloudFormation template, with at least the `Resources` section,
+in the body of the request.
+
+**IMPORTANT:**
+
+> Currently, we only support JSON-formatted templates. YAML support is coming
+soon.
+
+The following properties should be submitted:
+
++ `format` (string) - The format of the template. Valid values: `json`, `yaml`. Note: `yaml` is not currently supported, but will be shortly.
++ `template` (object) - The CloudFormation template, including the `Resources` section.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+
+            {
+                "format": "json",
+                "template": {
+                    "Resources": {
+                        "MyRoute53Resource" : {
+                            "Type" : "AWS::Route53::RecordSet",
+                            "Properties" : {
+                                "HostedZoneId" : "ABC123DEF",
+                                "Comment": "hosted zone",
+                                "Name" : "example.com",
+                                "Type" : "TXT",
+                                "TTL" : "300"
+                            }
+                        }
+                    }
+                }
+            }
+
++ Response 200 (application/json)
+    + `status` (number) - The status of the result: `0` for `PASS`, `1` for `WARN`, and `2` for `FAIL`
+    + `message` (string) - A description of the result
+    + `resource` (string) - The affected resource from the original template
+    
+    + Body
+
+            [
+                {
+                    "status": 2,
+                    "message": "IAM inline permission allows access to any resource.",
+                    "resource": "RolePolicies"
+                },
+                {
+                    "status": 0,
+                    "message": "Launch configuration does not specify inline block device mappings.",
+                    "resource": "LaunchConfig"
+                }
+            ]
