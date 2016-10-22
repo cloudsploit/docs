@@ -78,6 +78,23 @@ request(options, function (error, response, body){
 });
 ```
 
+## Error Responses
+
+The API attempts to follow standard error responses. An error response will look like the following:
+
+```
+{
+    "status":404,
+    "code": 1,
+    "message": "The resource could not be found"
+    "errors": [
+        "We could not find the requested resource."
+    ]
+}
+```
+
+Additionally, errors will have the HTTP Status Code set in the response headers.
+
 # Group Accounts
 
 ## Account [/accounts/{id}{?expand}]
