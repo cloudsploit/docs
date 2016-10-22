@@ -1,80 +1,1043 @@
 FORMAT: 1A
-HOST: http://polls.apiblueprint.org/
+HOST: https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod/v2
 
-# CloudSploit
+# CloudSploit API
 
-Polls is a simple API allowing consumers to view polls and vote in them.
+The CloudSploit API allows your applications to interact with the CloudSploit service.
+It is important to note that not all functionality (namely account-level and billing changes) is exposed through the API, so please
+browse the examples below.
 
-## Questions Collection [/questions]
+## Getting Started
 
-### List All Questions [GET]
+To access the API, you will need to be a Premium Plan user and have a valid API access
+key and secret. This is **not** your AWS access key. To generate a CloudSploit
+access key, sign into the dashboard and click "API Keys." On the right, click
+"Generate API Key." Be sure to record the access key and secret that appears in the dialog
+window because you will not be able to retrieve the secret again after leaving the page.
 
-+ Response 200 (application/json)
+## API Details
 
-        [
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
-        ]
+| Setting             | Value                                                          |
+|---------------------|----------------------------------------------------------------|
+| Base Endpoint       | https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod/v2 |
+| Content-Type        | application/json                                               |
+| Required Headers    | X-API-Key, X-Signature, X-Timestamp                            |
+| Signature Format    | HMAC SHA-256                                                   |
+| HMAC Encoding       | Hex                                                            |
+| Max Timestamp Drift | 30 Seconds                                                     |
 
-### Create a New Question [POST]
+## Signature Creation
 
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
+The signature is generated with the following algorithm:
+
+```
+hmac256(timestamp + method + requestPath + body, secret)
+```
+
+* **timestamp**: the Unix UTC timestamp in seconds
+* **method**: the HTTP method in uppercase. Ex: GET, POST
+* **requestPath**: the path. Ex: /v2/realtimes
+* **body**: The JSON stringified body (if no body, use an empty string)
+* **secret**: The secret obtained from the CloudSploit dashboard
+
+### Example Signature Creation
+
+```
+var crypto = require('crypto');
+var moment = require('moment');
+var request = require('request');
+ 
+var key = '<cloudsploit-key>';
+var secret = '<cloudsploit-secret>';
+var endpoint = 'https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod';
+var path = '/v2/scans';
+var timestamp = (moment.unix(new Date()))/1000;
+ 
+var string = timestamp + 'GET' + path;
+ 
+var hmac = crypto.createHmac('sha256', secret);
+hmac.setEncoding('hex');
+hmac.write(string);
+hmac.end();
+var signature = hmac.read();
+ 
+var options = {
+    method: 'GET',
+    url: endpoint + path,
+    headers: {
+        'X-API-Key': key,
+        'X-Signature': signature,
+        'X-Timestamp': timestamp,
+        "Content-Type": "application/json"
+    }
+};
+ 
+request(options, function (error, response, body){
+    if (error) return console.log(error);
+    console.log(JSON.stringify(response));
+});
+```
+
+# Group Accounts
+
+## Account [/accounts/{id}{?expand}]
+
+The API allows for the retrieval of account details but does not allow `PUT` or `DELETE` operations
+for security purposes. These operations affect the status of the entire account and must be performed
+through the UI.
+
+### GET - View Account Details [GET]
+
++ Parameters
+    + id (number) - ID of the account
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `plan`
 
 + Request (application/json)
-
-        {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
-        }
-
-+ Response 201 (application/json)
-
     + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
 
-            Location: /questions/2
++ Response 200 (application/json)
+    + `id` (number) - The account ID
+    + `stripe_id` (string) - The customer ID if billing details have been submitted. If this is `null` the account is not a registered customer.
+    + `referral_code` (string) - The referral code that can be used to refer customers.
+    + `referred_with` (string) - The referral code that was used at signup.
+    + `created` (date) - The date of the account creation.
+    + `current_plan` (number) - The plan ID that is associated with the account.
+    + `num_allowed_keys` (number) - How many upgraded keys are allowed with the current plan.
+    + `high_cost_allowed` (boolean) - Whether the account can submit payments larger than $500/month.
+    
+    + Body
+    
+            {
+                "id": 1,
+                "stripe_id": "cus_abc123def",
+                "referral_code": "ABC123DEF4",
+                "referred_with": "GHI567JKL8",
+                "created": "2015-07-12T14:35:42.000Z",
+                "current_plan": 50,
+                "num_allowed_keys": 1,
+                "high_cost_allowed": false
+            }
 
+# Group Alerts
+
+## Alerts Collection [/alerts{?expand,limit,offset}]
+
+### GET - List All Alerts [GET]
+
++ Parameters
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`, `integration`, `test`
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The alert ID
+    + `result` (number) - The result on which to alert. Valid values: `1` (WARN), `2` (FAIL)
+    + `enabled` (boolean) - Whether the alert is enabled.
+    + `created` (date) - The date of the alert creation.
+    + `test_id` (number) - The test ID that is associated with the alert.
+    + `account_id` (number) - The account ID that is associated with the alert.
+    + `key_id` (number) - The key ID that is associated with the alert.
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "result": 1,
+                    "enabled": true,
+                    "created": "2016-04-18T20:53:52.000Z",
+                    "test_id": 124,
+                    "account_id": 1,
+                    "key_id": 1
+                }
+            ]
+
+## Alert [/alerts/{id}{?expand}]
+
+### GET - View Alert Details [GET]
+
++ Parameters
+    + id (number) - ID of the alert
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`, `integration`, `test`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The alert ID
+    + `result` (number) - The result on which to alert. Valid values: `1` (WARN), `2` (FAIL)
+    + `enabled` (boolean) - Whether the alert is enabled.
+    + `created` (date) - The date of the alert creation.
+    + `test_id` (number) - The test ID that is associated with the alert.
+    + `account_id` (number) - The account ID that is associated with the alert.
+    + `key_id` (number) - The key ID that is associated with the alert.
+    
+    + Body
+    
+            {
+                "id": 1,
+                "result": 1,
+                "enabled": true,
+                "created": "2016-04-18T20:53:52.000Z",
+                "test_id": 124,
+                "account_id": 1,
+                "key_id": 1
+            }
+
+# Group API Keys
+
+## API Keys Collection [/apikeys{?limit,offset,open_access}]
+
+API Keys are CloudSploit API keys, **not** AWS account access keys. You cannot retrieve
+any keys' secret through the API. Secrets are only exposed at the time of creation.
+
+### GET - List All API Keys [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + open_access (boolean, optional) - Whether only apikeys that are open access should be returned.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The apikey ID
+    + `access_key` (string) - The API key value.
+    + `created` (date) - The date of the alert creation.
+    + `open_access` (boolean) - Whether the apikey is enabled for non-connected account scanning (consultant plan only).
+    + `scans_per_month` (number) - The number of scans that can be performed each month.
+    + `account_id` (number) - The account ID that is associated with the apikey.
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "access_key": "th8Zkr5dqzmCNvagzYJAiV",
+                    "created": "2016-09-18T20:12:38.000Z"
+                    "open_access": true,
+                    "scans_per_month": 10,
+                    "account_id": 1
+                }
+            ]
+
+## API Key [/apikeys/{id}]
+
+### GET - View API Key Details [GET]
+
++ Parameters
+    + id (number) - ID of the apikey
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The apikey ID
+    + `access_key` (string) - The API key value.
+    + `created` (date) - The date of the alert creation.
+    + `open_access` (boolean) - Whether the apikey is enabled for non-connected account scanning (consultant plan only).
+    + `scans_per_month` (number) - The number of scans that can be performed each month.
+    + `account_id` (number) - The account ID that is associated with the apikey.
+    
+    + Body
+    
+            {
+                "id": 1,
+                "access_key": "th8Zkr5dqzmCNvagzYJAiV",
+                "created": "2016-09-18T20:12:38.000Z"
+                "open_access": true,
+                "scans_per_month": 10,
+                "account_id": 1
+            }
+
+# Group Categories
+
+## Categories Collection [/categories{?limit,offset}]
+
+Categories are a global endpoint available to all users. They encompass the main plugin categories
+and roughly follow the AWS service names (EC2, VPC, etc.). You cannot create new categories or
+modify existing ones.
+
+### GET - List All Categories [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The category ID
+    + `name` (string) - The category name
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "name": "CloudTrail"
+                },
+                {
+                    "id": 3,
+                    "name": "EC2"
+                }
+            ]
+
+## Category [/categories/{id}]
+
+### GET - View Category Details [GET]
+
++ Parameters
+    + id (number) - ID of the category
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The category ID
+    + `name` (string) - The category name
+    
+    + Body
+    
+            {
+                "id": 3,
+                "name": "EC2"
+            }
+
+# Group Groups
+
+## Groups Collection [/groups{?limit,offset}]
+
+Groups are an optional feature of CloudSploit that enable you to group related users and
+connected accounts for the purposes of restricting access to various users across
+different teams.
+
+### GET - List All Groups [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The group ID
+    + `name` (string) - The group name
+    + `created` (date) - The date of the group creation
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "name": "Default",
+                    "created": "2016-06-28T01:09:30.000Z"
+                },
+                {
+                    "id": 2,
+                    "name": "Security Team",
+                    "created": "2016-06-28T20:32:24.000Z"
+                }
+            ]
+
+## Group [/groups/{id}]
+
+### GET - View Group Details [GET]
+
++ Parameters
+    + id (number) - ID of the group
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The group ID
+    + `name` (string) - The group name
+    + `created` (date) - The date of the group creation
+    
+    + Body
+    
+            {
+                "id": 2,
+                "name": "Security Team",
+                "created": "2016-06-28T20:32:24.000Z"
+            }
+
+# Group Integrations
+
+## Integrations Collection [/integrations{?limit,offset}]
+
+Integrations are connections between CloudSploit and third-parties like AWS SNS,
+or Slack.
+
+### GET - List All Integrations [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The integration ID
+    + `settings` (object) - The settings for the integration. Note that these are different for each integration type.
+    + `name` (string) - The integration name
+    + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
+    + `enabled` (boolean) - Whether the integration is enabled
+    + `created` (date) - The date of the integration creation
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "settings": {
+                        "address": "demo@example.com"
+                    },
+                    "name": "demo-email",
+                    "type": "email",
+                    "enabled": true,
+                    "created": "2016-04-03T18:26:09.000Z"
+                },
+                {
+                    "id": 2,
+                    "settings": {
+                        "slack_webhook_url": "https://hooks.slack.com/services/ABCDEF/123456"
+                    },
+                    "name": "slack-alerts",
+                    "type": "slack",
+                    "enabled": true,
+                    "created": "2016-04-18T23:43:17.000Z"
+                },
+                {
+                    "id": 3,
+                    "settings": {
+                        "sns_arn": "arn:aws:sns:us-east-1:012345678911:demo"
+                    },
+                    "name": "sns-alerts",
+                    "type": "sns",
+                    "enabled": true,
+                    "created": "2016-07-23T21:28:29.000Z"
+                }
+            ]
+
+## Integration [/integrations/{id}]
+
+### GET - View Integration Details [GET]
+
++ Parameters
+    + id (number) - ID of the integration
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The integration ID
+    + `settings` (object) - The settings for the integration. Note that these are different for each integration type.
+    + `name` (string) - The integration name
+    + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
+    + `enabled` (boolean) - Whether the integration is enabled
+    + `created` (date) - The date of the integration creation
+    
+    + Body
+    
+            {
+                "id": 3,
+                "settings": {
+                    "sns_arn": "arn:aws:sns:us-east-1:012345678911:demo"
+                },
+                "name": "sns-alerts",
+                "type": "sns",
+                "enabled": true,
+                "created": "2016-07-23T21:28:29.000Z"
+            }
+
+# Group Keys
+
+## Keys Collection [/keys{?limit,offset,paid}]
+
+Keys are AWS accounts that are connected to CloudSploit. Do not confuse these with AWS
+access keys or with CloudSploit API keys.
+
+### GET - List All Keys [GET]
+
+A list of all AWS accounts connected to your CloudSploit account will be returned. The
+response will never contain the external ID used with the account.
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + paid (boolean, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The key ID
+    + `name` (string) - The key name
+    + `last_scanned` (date) - The date of the last background scan
+    + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
+    + `role_arn` (string) - The AWS role ARN for the connection
+    + `paid` (boolean) - Whether the connected account is upgraded for CloudSploit features
+    + `cloudtrail_connected` (boolean) - Whether CloudTrail integration has been enabled (Note: this feature is not currently live)
+    + `interval` (number) - How often the account is scanned, in hours
+    + `created` (date) - The date of the integration creation
+    + `group_id` (number) - The ID of the group with which the key is associated
+    + `group` (object) - The group object
+    
+    + Body
+
+            [
+                {
+                    "id": 1,
+                    "name": "cloudsploit-demo",
+                    "last_scanned": "2016-10-02T03:41:21.000Z",
+                    "scan_disabled": false,
+                    "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
+                    "paid": true,
+                    "cloudtrail_connected": true,
+                    "interval": 24,
+                    "created": "2015-09-01T04:47:57.000Z",
+                    "group_id": 1,
+                    "group": {
+                        "id": 1,
+                        "name": "Default",
+                        "created": "2016-06-28T01:09:30.000Z"
+                    }
+                }
+            ]
+
+## Keys [/keys/{id}]
+
+### GET - View Key Details [GET]
+
++ Parameters
+    + id (number) - ID of the key
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The key ID
+    + `name` (string) - The key name
+    + `last_scanned` (date) - The date of the last background scan
+    + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
+    + `role_arn` (string) - The AWS role ARN for the connection
+    + `paid` (boolean) - Whether the connected account is upgraded for CloudSploit features
+    + `cloudtrail_connected` (boolean) - Whether CloudTrail integration has been enabled (Note: this feature is not currently live)
+    + `interval` (number) - How often the account is scanned, in hours
+    + `created` (date) - The date of the integration creation
+    + `group_id` (number) - The ID of the group with which the key is associated
+    + `group` (object) - The group object
+    
     + Body
 
             {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
+                "id": 1,
+                "name": "cloudsploit-demo",
+                "last_scanned": "2016-10-02T03:41:21.000Z",
+                "scan_disabled": false,
+                "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
+                "paid": true,
+                "cloudtrail_connected": true,
+                "interval": 24,
+                "created": "2015-09-01T04:47:57.000Z",
+                "group_id": 1,
+                "group": {
+                    "id": 1,
+                    "name": "Default",
+                    "created": "2016-06-28T01:09:30.000Z"
+                }
+            }
+
+# Group Scans
+            
+## Scans Collection [/scans{?limit,offset,key_id}]
+
+Scans are the core of the CloudSploit product. Each background scan for each key is saved
+as a scan object and the results are then tied to that scan by ID. The scan also contains
+additional metadata, including the number of passing, warning, failing, and unknown results.
+
+### GET - List All Scans [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + key_id (number, optional) - An ID of the key to filter scan results. If not provided, all scans across all keys will be returned.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The scan ID
+    + `key_id` (number) - The associated key ID
+    + `num_pass` (number) - The number of passing results in the scan
+    + `num_warn` (number) - The number of warning results in the scan
+    + `num_fail` (number) - The number of failing results in the scan
+    + `num_unknown` (number) - The number of unknown results in the scan
+    + `num_new_risks` (number) - The number of newly detected risk results in the scan
+    + `created` (date) - The date of the scan creation
+    + `key` (object) - The associated key data
+    
+    + Body
+
+            [
+                {
+                    "id": 1,
+                    "key_id": 1,
+                    "num_pass": 182,
+                    "num_warn": 35,
+                    "num_fail": 48,
+                    "num_unknown": 1,
+                    "num_new_risks": 1,
+                    "created": "2016-10-21T05:51:34.000Z",
+                    "key": {
+                        "name": "cloudsploit-demo"
+                    }
+                },
+                {
+                    "id": 2,
+                    "key_id": 2,
+                    "num_pass": 82,
+                    "num_warn": 135,
+                    "num_fail": 18,
+                    "num_unknown": 0,
+                    "num_new_risks": 0,
+                    "created": "2016-10-20T05:46:23.000Z",
+                    "key": {
+                        "name": "my-account"
+                    }
+                }
+            ]
+
+## Scans [/scans/{id}]
+
+### GET - View Scan Details [GET]
+
+Returns the entire scan, including results and expanded test and category objects.
+
+**WARNING** The size of this response can be quite large. The example included here
+is purposefully truncated.
+
++ Parameters
+    + id (number) - ID of the scan
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The scan ID
+    + `key_id` (number) - The associated key ID
+    + `num_pass` (number) - The number of passing results in the scan
+    + `num_warn` (number) - The number of warning results in the scan
+    + `num_fail` (number) - The number of failing results in the scan
+    + `num_unknown` (number) - The number of unknown results in the scan
+    + `num_new_risks` (number) - The number of newly detected risk results in the scan
+    + `created` (date) - The date of the scan creation
+    + `key` (object) - The associated key data
+    + `results` (array) - The associated results for the scan
+        + `id` (number) - The unique result ID
+        + `result` (number) - The result of the test (`0` for `PASS`, `1` for `WARN`, `2` for `FAIL`, and `3` for `UNKNOWN`)
+        + `resource` (string) - If applicable, the affected resource ARN or other identifier
+        + `message` (string) - The test message output
+        + `region` (string) - The affected AWS region
+        + `discovered` (boolean) - Whether the result was newly discovered during this scan (as opposed to during a previous scan)
+        + `created` (date) - The date of the result creation
+        + `test` (object) - The object containing test information
+            + _See the `test` section of the documentation for output information_
+    
+    + Body
+
+            {
+                "id": 1,
+                "key_id": 1,
+                "num_pass": 182,
+                "num_warn": 35,
+                "num_fail": 48,
+                "num_unknown": 1,
+                "num_new_risks": 1,
+                "created": "2016-10-20T05:46:23.000Z",
+                "key": {
+                    "id": 1,
+                    "name": "cloudsploit-demo",
+                    "last_scanned": "2016-10-21T05:51:34.000Z",
+                    "scan_disabled": false,
+                    "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
+                    "paid": true,
+                    "cloudtrail_connected": true,
+                    "interval": 24,
+                    "created": "2015-09-01T04:47:57.000Z",
+                    "group_id": 1
+                },
+                "results": [
                     {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
+                        "id": 1,
+                        "result": 0,
+                        "resource": null,
+                        "message": "CloudTrail is enabled",
+                        "region": "us-east-1",
+                        "discovered": false,
+                        "created": "2016-10-20T05:46:26.000Z",
+                        "test": {
+                            "id": 2,
+                            "query": "cloudtrailEnabled",
+                            "title": "CloudTrail Enabled",
+                            "description": "Ensures CloudTrail is enabled for all regions within an account",
+                            "more_info": "CloudTrail should be enabled for all regions in order to detect suspicious activity in regions that are not typically used.",
+                            "recommended_action": "Enable CloudTrail for all regions and ensure that at least one region monitors global service events",
+                            "link": "http://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html",
+                            "category_id": 1,
+                            "category": {
+                                "id": 1,
+                                "name": "CloudTrail"
+                            }
+                        }
                     }
                 ]
+            }
+            
+# Group Suppressions
+
+## Suppressions Collection [/suppressions{?limit,offset}]
+
+Suppressions are used to prevent certain results from appearing in future scans. For
+example, suppressing us-east-1 would prevent any results from that region from appearing.
+
+### GET - List All Suppressions [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The suppression ID
+    + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
+    + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
+    + `created` (date) - The date of the suppression creation
+    + `key_id` (number) - The ID of the key for this suppression.
+    + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
+    + `key` (object) - The associated key object.
+    
+    + Body
+
+            [
+                {
+                    "id": 1,
+                    "region": "ap-northeast-2",
+                    "resource": null,
+                    "created": "2016-05-07T05:02:13.000Z",
+                    "key_id": 1,
+                    "test_id": null,
+                    "key": {
+                        "id": 1,
+                        "name": "cloudsploit-demo",
+                        "last_scanned": "2016-10-21T05:51:34.000Z",
+                        "scan_disabled": false,
+                        "role_arn": "arn:aws:iam::012345678910:role/cloudsploit-demo",
+                        "paid": true,
+                        "cloudtrail_connected": true,
+                        "interval": 24,
+                        "created": "2015-09-01T04:47:57.000Z",
+                        "group_id": 1
+                    }
+                }
+            ]
+
+## Suppressions [/suppressions/{id}]
+
+### GET - View Suppression Details [GET]
+
++ Parameters
+    + id (number) - ID of the suppression
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The suppression ID
+    + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
+    + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
+    + `created` (date) - The date of the suppression creation
+    + `key_id` (number) - The ID of the key for this suppression.
+    + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
+    + `key` (object) - The associated key object.
+    
+    + Body
+
+            {
+                "id": 1,
+                "region": "ap-northeast-2",
+                "resource": null,
+                "created": "2016-05-07T05:02:13.000Z",
+                "key_id": 1,
+                "test_id": null,
+                "key": {
+                    "id": 1,
+                    "name": "cloudsploit-demo",
+                    "last_scanned": "2016-10-21T05:51:34.000Z",
+                    "scan_disabled": false,
+                    "role_arn": "arn:aws:iam::012345678910:role/cloudsploit-demo",
+                    "paid": true,
+                    "cloudtrail_connected": true,
+                    "interval": 24,
+                    "created": "2015-09-01T04:47:57.000Z",
+                    "group_id": 1
+                }
+            }
+            
+# Group Tests
+
+## Tests Collection [/tests{?limit,offset,expand}]
+
+Tests (also called "plugins") are the engine behind the scans. They execute the various
+checks against AWS services.
+
+### GET - List All Tests [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `category`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The test ID
+    + `query` (string) - The shorthand referenced used internally for the test.
+    + `title` (string) - The title of the test.
+    + `description` (string) - A description of what the test does.
+    + `more_info` (string) - A longer description of the risk being checked by the test.
+    + `recommended_action` (string) - Remediation information for the user.
+    + `link` (string) - A link to AWS documentation for steps to remediate the risk.
+    + `category_id` (number) - The ID of the category for this suppression.
+    
+    + Body
+
+            [
+                {
+                    "id": 1,
+                    "query": "cloudtrailBucketDelete",
+                    "title": "CloudTrail Bucket Delete Policy",
+                    "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
+                    "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
+                    "recommended_action": "Enable MFA delete on the CloudTrail bucket",
+                    "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
+                    "category_id": 1
+                },
+                {
+                    "id": 2,
+                    "query": "cloudtrailEnabled",
+                    "title": "CloudTrail Enabled",
+                    "description": "Ensures CloudTrail is enabled for all regions within an account",
+                    "more_info": "CloudTrail should be enabled for all regions in order to detect suspicious activity in regions that are not typically used.",
+                    "recommended_action": "Enable CloudTrail for all regions and ensure that at least one region monitors global service events",
+                    "link": "http://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html",
+                    "category_id": 1
+                }
+            ]
+
+## Tests [/tests/{id}{?expand}]
+
+### GET - View Test Details [GET]
+
++ Parameters
+    + id (number) - ID of the test
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `category`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The test ID
+    + `query` (string) - The shorthand referenced used internally for the test.
+    + `title` (string) - The title of the test.
+    + `description` (string) - A description of what the test does.
+    + `more_info` (string) - A longer description of the risk being checked by the test.
+    + `recommended_action` (string) - Remediation information for the user.
+    + `link` (string) - A link to AWS documentation for steps to remediate the risk.
+    + `category_id` (number) - The ID of the category for this suppression.
+    
+    + Body
+
+            {
+                "id": 1,
+                "query": "cloudtrailBucketDelete",
+                "title": "CloudTrail Bucket Delete Policy",
+                "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
+                "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
+                "recommended_action": "Enable MFA delete on the CloudTrail bucket",
+                "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
+                "category_id": 1
+            }
+            
+# Group Users
+
+## Users Collection [/users{?limit,offset,expand}]
+
+### GET - List All Users [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `group`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The user ID
+    + `email` (string) - The user's email address.
+    + `confirmed` (boolean) - Whether the user has confirmed their email.
+    + `password_reset` (boolean) - Whether the user's password is currently reset.
+    + `send_announcements` (boolean) - Whether the user has opted to receive CloudSploit announcements via email.
+    + `send_scan_results` (boolean) - Whether the user has opted to receive scan reports via email.
+    + `send_new_risks` (boolean) - Whether the user has opted to receive only new risk alerts via email.
+    + `account_admin` (boolean) - Whether the user is an account admin.
+    + `created` (date) - The date of the user creation
+    
+    + Body
+
+            [
+                {
+                    "id": 1,
+                    "email": "demo@example.com",
+                    "confirmed": true,
+                    "password_reset": false,
+                    "send_announcements": true,
+                    "send_scan_results": true,
+                    "send_new_risks": true,
+                    "account_admin": true,
+                    "created": "2015-07-12T14:35:42.000Z"
+                }
+            ]
+
+## Users [/users/{id}{?expand}]
+
+### GET - View User Details [GET]
+
++ Parameters
+    + id (number) - ID of the user
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `group`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The user ID
+    + `email` (string) - The user's email address.
+    + `confirmed` (boolean) - Whether the user has confirmed their email.
+    + `password_reset` (boolean) - Whether the user's password is currently reset.
+    + `send_announcements` (boolean) - Whether the user has opted to receive CloudSploit announcements via email.
+    + `send_scan_results` (boolean) - Whether the user has opted to receive scan reports via email.
+    + `send_new_risks` (boolean) - Whether the user has opted to receive only new risk alerts via email.
+    + `account_admin` (boolean) - Whether the user is an account admin.
+    + `created` (date) - The date of the user creation
+    
+    + Body
+
+            {
+                "id": 1,
+                "email": "demo@example.com",
+                "confirmed": true,
+                "password_reset": false,
+                "send_announcements": true,
+                "send_scan_results": true,
+                "send_new_risks": true,
+                "account_admin": true,
+                "created": "2015-07-12T14:35:42.000Z"
             }
