@@ -3,6 +3,11 @@ HOST: https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod/v2
 
 # CloudSploit API
 
+**NOTE:**
+
+> The documentation is not currently complete. All GET requests are documented,
+but related POSTs and PUTs are not.
+
 The CloudSploit API allows your applications to interact with the CloudSploit service.
 It is important to note that not all functionality (namely account-level and billing changes) is exposed through the API, so please
 browse the examples below.
@@ -606,6 +611,74 @@ response will never contain the external ID used with the account.
                 }
             ]
 
+### POST - Create a New Key [POST]
+
+When submitting a new key, CloudSploit will verify that we are able to assume
+the provided IAM role. Be sure to submit a valid role ARN and external ID
+combination. We do not support AWS access key and secret access due to their
+limited security capabilities.
+
+The group ID can be obtained by querying the `/v2/groups` endpoint for a list
+of available groups. A group must be provided - the default should be used
+if a custom group is not desired. You may hard-code your custom group ID
+since it will not change over the lifetime of your account.
+
+After submitting your group, you may upgrade it via a `PUT`.
+
++ Request (application/json)
+    + `name` (string) - The key name
+    + `role_arn` (string) - The AWS role ARN for the connection
+    + `external_id` (string) - The AWS role ARN external ID for cross-account access
+    + `group_id` (number) - The ID of the group with which the key is associated
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "mynewkey",
+                "role_arn": "arn:aws:iam::012345678911:role/mynewkey",
+                "external_id": "65aca4f7-4eae-45a1-879c-56baf2c730b3",
+                "group_id": 1
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The key ID
+    + `name` (string) - The key name
+    + `last_scanned` (date) - The date of the last background scan
+    + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
+    + `role_arn` (string) - The AWS role ARN for the connection
+    + `paid` (boolean) - Whether the connected account is upgraded for CloudSploit features
+    + `cloudtrail_connected` (boolean) - Whether CloudTrail integration has been enabled (Note: this feature is not currently live)
+    + `interval` (number) - How often the account is scanned, in hours
+    + `created` (date) - The date of the integration creation
+    + `group_id` (number) - The ID of the group with which the key is associated
+    + `group` (object) - The group object
+    
+    + Body
+
+            {
+                "id": 1,
+                "name": "mynewkey",
+                "last_scanned": "2016-10-02T03:41:21.000Z",
+                "scan_disabled": false,
+                "role_arn": "arn:aws:iam::012345678911:role/mynewkey",
+                "paid": false,
+                "cloudtrail_connected": false,
+                "interval": 36,
+                "created": "2015-09-01T04:47:57.000Z",
+                "group_id": 1,
+                "group": {
+                    "id": 1,
+                    "name": "Default",
+                    "created": "2016-06-28T01:09:30.000Z"
+                }
+            }
+
 ## Keys [/keys/{id}]
 
 ### GET - View Key Details [GET]
@@ -651,6 +724,70 @@ response will never contain the external ID used with the account.
                     "name": "Default",
                     "created": "2016-06-28T01:09:30.000Z"
                 }
+            }
+
+### PUT - Update a Key [PUT]
+
+A key's `paid`, `interval`, and `group_id` fields can be updated. Before updating
+the `paid` field, ensure that your account supports adding additional upgraded
+keys.
+
+You do not have to update all fields at once. It is recommended to submit the `paid`
+field by itself.
+
++ Request (application/json)
+    + `paid` (boolean) - Whether the key is using upgraded features
+    + `interval` (number) - How often the account is scanned, in hours
+    + `group_id` (number) - The ID of the group with which the key is associated
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "paid": true,
+                "interval": 10,
+                "group_id": 2
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+            
++ Response 400 (application/json)
+    
+    + Body
+
+            {
+                "status": 400,
+                "code": 1,
+                "message": "Bad request",
+                "errors": [
+                    "The current plan does not support any more connected accounts"
+                ]
+            }
+
++ Response 403 (application/json)
+    
+    + Body
+
+            {
+                "status": 403,
+                "code": 1,
+                "message": "Access denied",
+                "errors": [
+                    "This account does not have permission to access the requested reseource."
+                ]
             }
 
 # Group Scans
@@ -1101,6 +1238,9 @@ returned which can be used to poll for results.
 and upgraded account within CloudSploit. API-Only (consultant plan) users can
 submit an arbitrary AWS role ARN and external ID (assuming the permissions are
 properly configured within the remote AWS account to allow CloudSploit access).
+
+> Realtime scans are not saved within your account. The results are returned to
+the polling request and should be processed or saved by the invoking application.
 
 ### Create a Realtime Scan [POST]
 
