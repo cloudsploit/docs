@@ -790,9 +790,33 @@ field by itself.
                 ]
             }
 
+### DELETE - Delete a Key [DELETE]
+
+When you remove a key from CloudSploit, the key's associated data, including scans,
+results, and suppressions, are deleted as well. Be absolutely sure you wish to
+permanently delete the key before continuing.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Scans
             
-## Scans Collection [/scans{?limit,offset,key_id}]
+## Scans Collection [/scans{?limit,offset,key_id,start_date,end_date}]
 
 Scans are the core of the CloudSploit product. Each background scan for each key is saved
 as a scan object and the results are then tied to that scan by ID. The scan also contains
@@ -804,6 +828,8 @@ additional metadata, including the number of passing, warning, failing, and unkn
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
     + key_id (number, optional) - An ID of the key to filter scan results. If not provided, all scans across all keys will be returned.
+    + start_date (string, optional) - A start date for filtering. Format: YYYY-MM-DD.
+    + end_date (string, optional) - An end date for filtering. Format: YYYY-MM-DD.
 
 + Request (application/json)
     + Headers
