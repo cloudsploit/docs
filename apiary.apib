@@ -211,6 +211,64 @@ through the UI.
                     "key_id": 1
                 }
             ]
+            
+### POST - Create a New Alert [POST]
+
+Before submitting a new alert, you must have valid integration ID(s), test ID, and key ID.
+You can obtain these via the respective API endpoints.
+
+It is also important to understand CloudSploit's result methodology. A "2" is a failing result,
+while a "1" is a warning result. You cannot create an alert for a passing ("0") or unknown
+result ("3"). If you create an alert for a warning and a scan results in a failure, the alert
+will be triggered because a failure implies the warning was triggered as well.
+
++ Request (application/json)
+    + `result` (number) - The result to alert on - either `1` or `2`.
+    + `enabled` (boolean) - Optional. Whether the alert should be enabled or not. Default: `true`
+    + `test_id` (number) - The ID of the test to be used with the alert
+    + `integration_ids` (array) - An array of integration IDs to send the alert to when triggered
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "result": 2,
+                "enabled": true,
+                "test_id": 11,
+                "key_id": 1
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The alert ID
+    + `result` (number) - The result - warning or failing - 1 or 2
+    + `enabled` (boolean) - Whether the alert is enabled or not
+    + `created` (date) - The date time that the alert was created
+    + `test_id` (number) - The ID of the test associated with the alert
+    + `account_id` (number) - The account ID of the alert
+    + `key_id` (boolean) - The ID of the key associated with the alert
+    + `key` (object) - The key object for the alert
+    + `integrations` (array) - An array of integration objects for the alert
+    + `test` (object) - The test object for the alert
+    
+    + Body
+
+            {
+                "id": 100,
+                "result": 2,
+                "enabled": true,
+                "created": '2016-11-03T00:45:48.000Z',
+                "test_id": 11,
+                "account_id": 1,
+                "key_id": 1,
+                "key": {},
+                "integrations": [{}],
+                "test": {}
+            }
 
 ## Alert [/alerts/{id}{?expand}]
 
@@ -246,6 +304,63 @@ through the UI.
                 "test_id": 124,
                 "account_id": 1,
                 "key_id": 1
+            }
+
+### PUT - Update an Alert [PUT]
+
+An alert's `enabled`, `result`, `key_id`, and `integration_ids` fields can be updated.
+You cannot update the `test_id` field (it's better to simply create a new alert).
+
++ Request (application/json)
+    + `result` (number) - The result to alert on - either `1` or `2`.
+    + `enabled` (boolean) - Optional. Whether the alert should be enabled or not. Default: `true`
+    + `integration_ids` (array) - An array of integration IDs to send the alert to when triggered
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "result": 1,
+                "enabled": false,
+                "integration_ids": [1, 2]
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
+### DELETE - Delete an Alert [DELETE]
+
+When you remove an alert, you will stop receiving notifications to all of
+the connected integrations for that alert within five minutes.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
             }
 
 # Group API Keys
