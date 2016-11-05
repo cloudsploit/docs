@@ -370,6 +370,8 @@ the connected integrations for that alert within five minutes.
 API Keys are CloudSploit API keys, **not** AWS account access keys. You cannot retrieve
 any keys' secret through the API. Secrets are only exposed at the time of creation.
 
+For security and logistical reasons, you cannot delete or create API keys using the API.
+
 ### GET - List All API Keys [GET]
 
 + Parameters
@@ -1507,10 +1509,11 @@ in the body of the request.
 > Currently, we only support JSON-formatted templates. YAML support is coming
 soon.
 
-The following properties should be submitted:
+One of the following properties should be submitted, but not both. In the example `body` both
+are shown for demonstration purposes.
 
-+ `format` (string) - The format of the template. Valid values: `json`, `yaml`. Note: `yaml` is not currently supported, but will be shortly.
-+ `template` (object) - The CloudFormation template, including the `Resources` section.
++ `yaml` (string) - The CloudFormation template, including the `Resources` section, in YAML string format.
++ `json` (object) - The CloudFormation template, including the `Resources` section, in JSON object format.
 
 + Request (application/json)
     + Headers
@@ -1522,8 +1525,7 @@ The following properties should be submitted:
     + Body
 
             {
-                "format": "json",
-                "template": {
+                "json": {
                     "Resources": {
                         "MyRoute53Resource" : {
                             "Type" : "AWS::Route53::RecordSet",
@@ -1536,7 +1538,8 @@ The following properties should be submitted:
                             }
                         }
                     }
-                }
+                },
+                "yaml": "AWSTemplateFormatVersion: '2010-09-09'\n..."
             }
 
 + Response 200 (application/json)
