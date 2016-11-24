@@ -45,6 +45,12 @@ hmac256(timestamp + method + requestPath + body, secret)
 * **body**: The JSON stringified body (if no body, use an empty string)
 * **secret**: The secret obtained from the CloudSploit dashboard
 
+**IMPORTANT:**
+
+> It is critical that the string used to create the signature matches what the server expectes.
+Even a single space in the wrong place can cause the signature to be invalid. Do not use spaces
+bewtween fields or separators in the JSON-stringified body or elsewhere in the signature string.
+
 ### Example Signature Creation
 
 ```
@@ -82,6 +88,10 @@ request(options, function (error, response, body){
     console.log(JSON.stringify(response));
 });
 ```
+
+### Code Samples
+
+You can find more code examples in our [api-samples GitHub repository](https://github.com/cloudsploit/api-samples).
 
 ## Error Responses
 
@@ -597,6 +607,7 @@ or Slack.
     + `name` (string) - The integration name
     + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
     + `enabled` (boolean) - Whether the integration is enabled
+    + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
     + `created` (date) - The date of the integration creation
     
     + Body
@@ -610,6 +621,7 @@ or Slack.
                     "name": "demo-email",
                     "type": "email",
                     "enabled": true,
+                    "send_scan_results": true,
                     "created": "2016-04-03T18:26:09.000Z"
                 },
                 {
@@ -620,6 +632,7 @@ or Slack.
                     "name": "slack-alerts",
                     "type": "slack",
                     "enabled": true,
+                    "send_scan_results": false,
                     "created": "2016-04-18T23:43:17.000Z"
                 },
                 {
@@ -630,6 +643,7 @@ or Slack.
                     "name": "sns-alerts",
                     "type": "sns",
                     "enabled": true,
+                    "send_scan_results": true,
                     "created": "2016-07-23T21:28:29.000Z"
                 }
             ]
@@ -654,6 +668,7 @@ or Slack.
     + `name` (string) - The integration name
     + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
     + `enabled` (boolean) - Whether the integration is enabled
+    + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
     + `created` (date) - The date of the integration creation
     
     + Body
@@ -666,6 +681,7 @@ or Slack.
                 "name": "sns-alerts",
                 "type": "sns",
                 "enabled": true,
+                "send_scan_results": true,
                 "created": "2016-07-23T21:28:29.000Z"
             }
 
@@ -1506,13 +1522,14 @@ in the body of the request.
 
 **IMPORTANT:**
 
-> Currently, we only support JSON-formatted templates. YAML support is coming
-soon.
+> YAML is now supported, but due to formatting and parsing difficulties, we recommend
+converting the YAML string to base64 before submitting.
 
-One of the following properties should be submitted, but not both. In the example `body` both
+One of the following properties should be submitted, but not more than one. In the example `body` all
 are shown for demonstration purposes.
 
 + `yaml` (string) - The CloudFormation template, including the `Resources` section, in YAML string format.
++ `base64` (string) - The YAML string of the CloudFormation template converted to a base64 string.
 + `json` (object) - The CloudFormation template, including the `Resources` section, in JSON object format.
 
 + Request (application/json)
@@ -1539,7 +1556,8 @@ are shown for demonstration purposes.
                         }
                     }
                 },
-                "yaml": "AWSTemplateFormatVersion: '2010-09-09'\n..."
+                "yaml": "AWSTemplateFormatVersion: '2010-09-09'\n...",
+                "base64": "IyBDbG91ZEZvcm1hdGlvbiBZQU1MIHRlbXBsYXRlIG..."
             }
 
 + Response 200 (application/json)
