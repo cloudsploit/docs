@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod/v2
+HOST: https://api.cloudsploit.com/v2
 
 # CloudSploit API
 
@@ -24,7 +24,7 @@ window because you will not be able to retrieve the secret again after leaving t
 
 | Setting             | Value                                                          |
 |---------------------|----------------------------------------------------------------|
-| Base Endpoint       | https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod/v2 |
+| Base Endpoint       | https://api.cloudsploit.com/v2 |
 | Content-Type        | application/json                                               |
 | Required Headers    | X-API-Key, X-Signature, X-Timestamp                            |
 | Signature Format    | HMAC SHA-256                                                   |
@@ -60,7 +60,7 @@ var request = require('request');
  
 var key = '<cloudsploit-key>';
 var secret = '<cloudsploit-secret>';
-var endpoint = 'https://4ija8kqhm7.execute-api.us-east-1.amazonaws.com/prod';
+var endpoint = 'https://api.cloudsploit.com';
 var path = '/v2/scans';
 var timestamp = (moment.unix(new Date()))/1000;
  
@@ -235,6 +235,7 @@ will be triggered because a failure implies the warning was triggered as well.
 + Request (application/json)
     + `result` (number) - The result to alert on - either `1` or `2`.
     + `enabled` (boolean) - Optional. Whether the alert should be enabled or not. Default: `true`
+    + `key_id` (number) - The ID of the key to be used with the alert.
     + `test_id` (number) - The ID of the test to be used with the alert
     + `integration_ids` (array) - An array of integration IDs to send the alert to when triggered
     
@@ -513,6 +514,125 @@ modify existing ones.
                 "name": "EC2"
             }
 
+# Group Events
+
+## Events Collection [/events{?limit,offset,result,region,action,start_date,end_date,key_id,expand,order}]
+
+CloudSploit Events is a Premium Plan feature that integrates with CloudWatch Events to
+detect security risks in AWS API calls in real-time.
+
+### GET - List All Events [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + result (number, optional) - A filter for severity. 0 for PASS, 1 for WARN, 2 for FAIL, and 3 for UNKNOWN.
+    + region (string, optional) - A filter for the region. Use the full AWS region name.
+    + action (string, optional) - A filter for the AWS event action. Example: "ec2:describeInstances"
+    + start_date (string, optional) - A filter for date range. Format: YYYY-MM-DD.
+    + end_date (string, optional) - A filter for date range. Format: YYYY-MM-DD.
+    + key_id (number, optional) - A filter for the account
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`
+    + order (string, optional) - How to order the results by created date. Valid values: asc, desc.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The event ID
+    + `created` (date) - The date of the event creation
+    + `ip_address` (string) - The IP address of the user who created the event in AWS
+    + `action` (string) - The event action from AWS
+    + `caller` (string) - The AWS ARN of the user who created the event in AWS
+    + `details` (string) - More information about the event's severity
+    + `key_id` (number) - The ID of the associated CloudSploit account key
+    + `message` (string) - Information about the event's security classification
+    + `region` (string) - The AWS region the event occurred in (or `global`)
+    + `result` (number) - The event's security classification
+    + `stored_id` (string) - An internal ID used to retrieve the full event details
+    
+    + Body
+    
+            [
+                {
+                    "id": 12345,
+                    "created": "2017-05-13T15:45:05.000Z",
+                    "action": "signin:ConsoleLogin",
+                    "region": "global",
+                    "result": 2,
+                    "caller": "arn:aws:iam::012345678911:root",
+                    "ip_address": "12.34.44.33",
+                    "message": "Root user used to log into the account console. The root user was used to make this call.",
+                    "details": null,
+                    "stored_id": "1a503f64-a845-4f59-a047-f8748f930c40",
+                    "key_id": 123,
+                    "key": {
+                        "event_settings": null,
+                        "id": 123,
+                        "name": "demo",
+                        "last_scanned": "2017-05-12T18:26:27.000Z",
+                        "scan_disabled": false,
+                        "role_arn": "arn:aws:iam::012345678911:role/demo",
+                        "paid": true,
+                        "interval": 24,
+                        "created": "2015-09-01T04:47:57.000Z",
+                        "group_id": 1
+                    }
+                }
+            ]
+
+## Event [/events/{id}]
+
+### GET - View Event Details [GET]
+
+This call will expose the full, original event from AWS. This is the event sent to
+CloudWatch and CloudTrail.
+
++ Parameters
+    + id (number) - ID of the event
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The event ID
+    + `created` (date) - The date of the event creation
+    + `ip_address` (string) - The IP address of the user who created the event in AWS
+    + `action` (string) - The event action from AWS
+    + `caller` (string) - The AWS ARN of the user who created the event in AWS
+    + `details` (string) - More information about the event's severity
+    + `key_id` (number) - The ID of the associated CloudSploit account key
+    + `message` (string) - Information about the event's security classification
+    + `region` (string) - The AWS region the event occurred in (or `global`)
+    + `result` (number) - The event's security classification
+    + `stored_id` (string) - An internal ID used to retrieve the full event details
+    + `stored_data` (object) - The original AWS event object
+    
+    + Body
+    
+            {
+                "id": 12345,
+                "created": "2017-05-13T15:45:05.000Z",
+                "action": "signin:ConsoleLogin",
+                "region": "global",
+                "result": 2,
+                "caller": "arn:aws:iam::012345678911:root",
+                "ip_address": "12.34.44.33",
+                "message": "Root user used to log into the account console. The root user was used to make this call.",
+                "details": null,
+                "stored_id": "1a503f64-a845-4f59-a047-f8748f930c40",
+                "stored_data": {},
+                "key_id": 123
+            }
+
 # Group Groups
 
 ## Groups Collection [/groups{?limit,offset}]
@@ -581,6 +701,36 @@ different teams.
                 "created": "2016-06-28T20:32:24.000Z"
             }
 
+### POST - Create a New Group [POST]
+
+You can create a new group with just a name.
+
++ Request (application/json)
+    + `name` (string) - The name of the group (alphanumeric between 2 and 25 characters).
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "mygroup"
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The alert ID
+    + `name` (string) - The name of the group
+    
+    + Body
+
+            {
+                "id": 100,
+                "name": "mygroup"
+            }
+
 # Group Integrations
 
 ## Integrations Collection [/integrations{?limit,offset}]
@@ -589,6 +739,8 @@ Integrations are connections between CloudSploit and third-parties like AWS SNS,
 or Slack.
 
 ### GET - List All Integrations [GET]
+
+Integrations with Slack, SNS, etc. can be listed via the GET call.
 
 + Parameters
     + limit (number, optional) - A limit on the number of responses to return.
@@ -648,6 +800,65 @@ or Slack.
                 }
             ]
 
+### POST - Create a New Integration [POST]
+
++ Request (application/json)
+    + `name` (string) - The name for the integration
+    + `type` (string) - The type of integration to create. Valid values: `slack`, `pagerduty`, `email`, `sns`, `opsgenie`
+    + `enabled` (boolean) - Whether the integration is enabled.
+    + `send_scan_results` (boolean) - Whether scan result summaries should be sent to this integration.
+    + `send_new_risks` (boolean) - Whether scan result summaries should only be sent to this integration if new risks are detected.
+    + `settings` (object) - Settings specific to the integration type.
+        + `slack_webhook_url` (string, optional) - Slack only. The webhook URL for the channel.
+        + `address` (string, optional) - Email only. An email address.
+        + `sns_arn` (string, optional) - SNS only. The ARN of the topic to send results to.
+        + `opsgenie_apikey` (string, optional) - OpsGenie only. The API key with permissions to post to OpsGenie.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "myintegration",
+                "type": "email",
+                "enabled": true,
+                "send_scan_results": true,
+                "send_new_risks": true,
+                "settings": {
+                    "address": "example@domain.com"
+                }
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The integration ID
+    + `settings` (object) - The settings for the integration. Note that these are different for each integration type.
+    + `name` (string) - The integration name
+    + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
+    + `enabled` (boolean) - Whether the integration is enabled
+    + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
+    + `send_new_risks` (boolean) - Whether scan result summaries should only be sent to this integration if new risks are detected.
+    + `created` (date) - The date of the integration creation
+    
+    + Body
+
+            {
+                "id": 1234,
+                "name": "myintegration",
+                "type": "email",
+                "enabled": true,
+                "send_scan_results": true,
+                "send_new_risks": true,
+                "settings": {
+                    "address": "example@domain.com"
+                },
+                "created": "2017-05-13T16:27:56.000Z",
+                "updated": "2017-05-13T16:27:56.000Z"
+            }
+
 ## Integration [/integrations/{id}]
 
 ### GET - View Integration Details [GET]
@@ -669,6 +880,7 @@ or Slack.
     + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
     + `enabled` (boolean) - Whether the integration is enabled
     + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
+    + `send_new_risks` (boolean) - Whether scan result summaries should only be sent to this integration if new risks are detected.
     + `created` (date) - The date of the integration creation
     
     + Body
@@ -683,6 +895,71 @@ or Slack.
                 "enabled": true,
                 "send_scan_results": true,
                 "created": "2016-07-23T21:28:29.000Z"
+            }
+
+### PUT - Update an Integration [PUT]
+
+An integration's `settings` can be updated, along with its scan settings (`send_scan_results`, etc.).
+
+
++ Request (application/json)
+    + `enabled` (boolean) - Whether the integration is enabled
+    + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
+    + `send_new_risks` (boolean) - Whether scan result summaries should only be sent to this integration if new risks are detected.
+    + `settings` (object) - Settings specific to the integration type.
+        + `slack_webhook_url` (string, optional) - Slack only. The webhook URL for the channel.
+        + `address` (string, optional) - Email only. An email address.
+        + `sns_arn` (string, optional) - SNS only. The ARN of the topic to send results to.
+        + `opsgenie_apikey` (string, optional) - OpsGenie only. The API key with permissions to post to OpsGenie.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "enabled": false,
+                "send_scan_results": false,
+                "send_new_risks": false,
+                "settings": {
+                    "address": "newexample@domain.com"
+                }
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
+### DELETE - Delete an Integration [DELETE]
+
+When you remove an integration from CloudSploit, scan results and alerts will no longer
+be sent within 5 minutes.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
             }
 
 # Group Keys
@@ -812,7 +1089,7 @@ After submitting your group, you may upgrade it via a `PUT`.
                 }
             }
 
-## Keys [/keys/{id}]
+## Key [/keys/{id}]
 
 ### GET - View Key Details [GET]
 
@@ -1102,6 +1379,26 @@ is purposefully truncated.
                     }
                 ]
             }
+
+### DELETE - Delete a Scan [DELETE]
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
             
 # Group Suppressions
 
@@ -1201,6 +1498,26 @@ example, suppressing us-east-1 would prevent any results from that region from a
                     "created": "2015-09-01T04:47:57.000Z",
                     "group_id": 1
                 }
+            }
+
+### DELETE - Delete a Suppression [DELETE]
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
             }
             
 # Group Tests
@@ -1578,4 +1895,4 @@ are shown for demonstration purposes.
                     "message": "Launch configuration does not specify inline block device mappings.",
                     "resource": "LaunchConfig"
                 }
-            ]
+            ]in
