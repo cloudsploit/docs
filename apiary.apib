@@ -1849,6 +1849,19 @@ are shown for demonstration purposes.
 + `base64` (string) - The YAML string of the CloudFormation template converted to a base64 string.
 + `json` (object) - The CloudFormation template, including the `Resources` section, in JSON object format.
 
+To allow customization of the scan, you can pass a `settings` object with the
+properties shown below. You can use this object to control which resources
+are excluded (`SKIPPED`) from the scan, or instead, which resources are the
+only ones scanned (`ONLY`).
+
+You cannot use _both_ `SKIPPED` and `ONLY`. The two parameters accomplish the
+same thing, but in different ways. The former allows you to get all results
+except specific ones, while the latter allows you to opt in to results only
+for specific resources.
+
+If you provide a `settings` object, you must specify the `WEB_PORTS` and
+`BACKUP_RETENTION_LIMIT` settings.
+
 + Request (application/json)
     + Headers
     
@@ -1874,13 +1887,28 @@ are shown for demonstration purposes.
                     }
                 },
                 "yaml": "AWSTemplateFormatVersion: '2010-09-09'\n...",
-                "base64": "IyBDbG91ZEZvcm1hdGlvbiBZQU1MIHRlbXBsYXRlIG..."
+                "base64": "IyBDbG91ZEZvcm1hdGlvbiBZQU1MIHRlbXBsYXRlIG...",
+                "settings": {
+                    "WEB_PORTS": [80, 443],
+                    "BACKUP_RETENTION_LIMIT": 1000,
+                    "SKIPPED": [
+                        ""
+                    ],
+                    "ONLY": [
+                        ""
+                    ]
+                }
             }
 
 + Response 200 (application/json)
     + `status` (number) - The status of the result: `0` for `PASS`, `1` for `WARN`, and `2` for `FAIL`
     + `message` (string) - A description of the result
     + `resource` (string) - The affected resource from the original template
+    + `settings` (object, optional) - Optional additional settings
+        + `WEB_PORTS` (array) - An array of ports that should be considered "safe" for exposing externally
+        + `BACKUP_RETENTION_LIMIT` (integer) - Value to use for database and cache backups
+        + `SKIPPED` (array) - An array of AWS CloudFormation resource types to exclude from the scan
+        + `ONLY` (array) - An array of AWS CloudFormation resource types to scan (CloudSploit will only scan these)
     
     + Body
 
