@@ -1454,6 +1454,64 @@ example, suppressing us-east-1 would prevent any results from that region from a
                 }
             ]
 
+### POST - Create a New Suppression [POST]
+
+A suppression always applied to a key via the `key_id` property. The suppression
+must then also contain one of the following:
+
+1. `region` - An AWS region to suppress
+2. `resource` - A free-form text field (1 - 255 characters) to suppress specific resources.
+3. `test_id` - The ID of a test to suppress.
+
+You may only submit one of the above. CloudSploit currently only supports
+these suppression types and does not support suppressing both a region and a
+resource or test simultaneously. For example, you can suppress the us-east-1
+region, but not a specific test in that region only.
+
+Note: The below API example shows a region, test ID, and resource for
+demonstration purposes only. Valid API requests will only contain one of
+the three.
+
++ Request (application/json)
+    + `key_id` (number) - The key ID
+    + `region` (string) - The AWS region
+    + `resource` (string) - A resource string, usually an AWS ARN
+    + `test_id` (number) - The ID of the test to suppress
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "key_id": 1,
+                "region": "us-east-1",
+                "resource": "arn::s3:my-bucket",
+                "test_id": 10
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The suppression ID
+    + `key_id` (number) - The key ID
+    + `region` (string) - The AWS region
+    + `resource` (string) - The resource string
+    + `test_id` (number) - The test ID
+    + `created` (date) - The date of the integration creation
+    
+    + Body
+
+            {
+                "id": 1,
+                "key_id": 1,
+                "region": "us-east-1",
+                "resource": "arn::s3:my-bucket",
+                "test_id": 10,
+                "created": "2015-09-01T04:47:57.000Z"
+            }
+
 ## Suppressions [/suppressions/{id}]
 
 ### GET - View Suppression Details [GET]
