@@ -1138,17 +1138,28 @@ After submitting your group, you may upgrade it via a `PUT`.
 
 ### PUT - Update a Key [PUT]
 
-A key's `paid`, `interval`, and `group_id` fields can be updated. Before updating
+A key's `paid`, `interval`, `group_id`, and `tags` fields can be updated. Before updating
 the `paid` field, ensure that your account supports adding additional upgraded
 keys.
 
 You do not have to update all fields at once. It is recommended to submit the `paid`
 field by itself.
 
+An example `tags` object would look like:
+```
+"tags": {
+    "mykey": "myvalue",
+    "environment": "production"
+}
+```
+
+Both tag keys and tag values must match the regex `^[a-zA-Z0-9_-]{1,100}$`.
+
 + Request (application/json)
     + `paid` (boolean) - Whether the key is using upgraded features
     + `interval` (number) - How often the account is scanned, in hours
     + `group_id` (number) - The ID of the group with which the key is associated
+    + `tags` (object) - An object of key name -> value mappings for arbitrary tags
     
     + Headers
     
@@ -1456,7 +1467,7 @@ example, suppressing us-east-1 would prevent any results from that region from a
 
 ### POST - Create a New Suppression [POST]
 
-A suppression always applied to a key via the `key_id` property. The suppression
+A suppression always applies to a key via the `key_id` property. The suppression
 must then also contain one of the following:
 
 1. `region` - An AWS region to suppress
@@ -1468,7 +1479,7 @@ these suppression types and does not support suppressing both a region and a
 resource or test simultaneously. For example, you can suppress the us-east-1
 region, but not a specific test in that region only.
 
-Note: The below API example shows a region, test ID, and resource for
+Note: The API example shown here includes a region, test ID, and resource for
 demonstration purposes only. Valid API requests will only contain one of
 the three.
 
