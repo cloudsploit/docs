@@ -731,6 +731,66 @@ You can create a new group with just a name.
                 "created": "2016-06-28T20:32:24.000Z"
             }
 
+### PUT - Update a Group [PUT]
+
+A group's name can be updated via a PUT. Additionally, it's users can be modified
+via a separate PUT.
+
+
++ Request (application/json)
+    + `name` (string) - The group name. Can not match the string `default`
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "newgroupname"
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
++ Request (application/json)
+    + `user_id` (number) - The user ID to add or remove to/from the group
+    + `action` (string) - Whether `adding`, `removing`, or `updating` the user
+    + `group_admin` (boolean) - Whether the user should be added or updated as an admin. Not valid when `action` is `removing`
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "user_id": 12,
+                "action": "adding",
+                "group_admin": true
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Integrations
 
 ## Integrations Collection [/integrations{?limit,offset}]
