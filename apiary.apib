@@ -51,6 +51,13 @@ hmac256(timestamp + method + requestPath + body, secret)
 Even a single space in the wrong place can cause the signature to be invalid. Do not use spaces
 bewtween fields or separators in the JSON-stringified body or elsewhere in the signature string.
 
+**A Note About Querystrings**
+
+> When generating the signature, querystring values should not be included. This prevents
+unordered strings from resulting in an "invalid signature" error. For example, if the
+full URL is "/v2/suppressions?key_id=50", then the signature should be calculated on
+"/v2/suppressions".
+
 ### Example Signature Creation
 
 ```
@@ -1473,14 +1480,21 @@ is purposefully truncated.
             
 # Group Suppressions
 
-## Suppressions Collection [/suppressions{?limit,offset}]
+## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id}]
 
 Suppressions are used to prevent certain results from appearing in future scans. For
 example, suppressing us-east-1 would prevent any results from that region from appearing.
 
+The `key_id`, `region`, and `test_id` filters can be used to reduce the size of the
+result body. They must be used individually (i.e. you cannot filter by _both_ a
+region and test ID).
+
 ### GET - List All Suppressions [GET]
 
 + Parameters
+    + key_id (number, optional) - A key ID filter
+    + region (string, optional) - A region filter
+    + test_id (number, optional) - A test ID filter
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
 
