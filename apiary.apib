@@ -3,11 +3,6 @@ HOST: https://api.cloudsploit.com/v2
 
 # CloudSploit API
 
-**NOTE:**
-
-> The documentation is not currently complete. All GET requests are documented,
-but related POSTs and PUTs are not.
-
 The CloudSploit API allows your applications to interact with the CloudSploit service.
 It is important to note that not all functionality (namely account-level and billing changes) is exposed through the API, so please
 browse the examples below.
@@ -156,7 +151,7 @@ through the UI.
 
 + Parameters
     + id (number) - ID of the account
-    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `plan`
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `plan`, `user`, `key`
 
 + Request (application/json)
     + Headers
@@ -173,7 +168,8 @@ through the UI.
     + `created` (date) - The date of the account creation.
     + `current_plan` (number) - The plan ID that is associated with the account.
     + `num_allowed_keys` (number) - How many upgraded keys are allowed with the current plan.
-    + `high_cost_allowed` (boolean) - Whether the account can submit payments larger than $500/month.
+    + `high_cost_allowed` (boolean) - Whether the account can submit payments larger than $10000/month.
+    + `trial_end` (date) - A date when the account's trial ends, if applicable
     
     + Body
     
@@ -268,7 +264,7 @@ will be triggered because a failure implies the warning was triggered as well.
     + `created` (date) - The date time that the alert was created
     + `test_id` (number) - The ID of the test associated with the alert
     + `account_id` (number) - The account ID of the alert
-    + `key_id` (boolean) - The ID of the key associated with the alert
+    + `key_id` (number) - The ID of the key associated with the alert
     + `key` (object) - The key object for the alert
     + `integrations` (array) - An array of integration objects for the alert
     + `test` (object) - The test object for the alert
@@ -386,7 +382,7 @@ the connected integrations for that alert within five minutes.
 ## API Keys Collection [/apikeys{?limit,offset,open_access}]
 
 API Keys are CloudSploit API keys, **not** AWS account access keys. You cannot retrieve
-any keys' secret through the API. Secrets are only exposed at the time of creation.
+any key's secret through the API. Secrets are only exposed at the time of creation.
 
 For security and logistical reasons, you cannot delete or create API keys using the API.
 
@@ -521,11 +517,261 @@ modify existing ones.
                 "name": "EC2"
             }
 
+# Group Compliances
+
+## Compliances Collection [/compliances{?scan_id,program_id}]
+
+Compliances are scan reports formatted for a specific compliance program (e.g. HIPAA). To obtain these
+results, send a `scan_id` (obtained from `/scans`) and a `program_id` (obtained from `/programs`).
+
+### GET - List All Compliances [GET]
+
++ Parameters
+    + scan_id (number) - The ID of a scan
+    + program_id (number) - The ID of a compliance program
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The compliance control ID
+    + `name` (string) - The compliance control name
+    + `description` (string) - A description of the compliance control
+    + `program_id` (number) - The ID of the compliance program
+    + `tests` (array) - An array of tests run as part of the control
+        + `id` (number) - The test ID
+        + `query` (string) - The shorthand referenced used internally for the test.
+        + `title` (string) - The title of the test.
+        + `description` (string) - A description of what the test does.
+        + `more_info` (string) - A longer description of the risk being checked by the test.
+        + `recommended_action` (string) - Remediation information for the user.
+        + `link` (string) - A link to AWS documentation for steps to remediate the risk.
+        + `category_id` (number) - The ID of the category for this suppression.
+        + `hipaa_enabled` (boolean) - Whether the test is run for HIPAA scans
+        + `hipaa_description` (string) - A description of the test for HIPAA compliance
+        + `account_id` (number) - Whether this test is custom to any account (null if not; global)
+        + `results` (array) - An array of result objects for this test
+            + `id` (number) - The unique result ID
+            + `result` (number) - The result of the test (`0` for `PASS`, `1` for `WARN`, `2` for `FAIL`, and `3` for `UNKNOWN`)
+            + `resource` (string) - If applicable, the affected resource ARN or other identifier
+            + `message` (string) - The test message output
+            + `region` (string) - The affected AWS region
+            + `discovered` (boolean) - Whether the result was newly discovered during this scan (as opposed to during a previous scan)
+            + `created` (date) - The date of the result creation
+    
+    + Body
+    
+            [
+                {
+                  "id": 1,
+                  "name": "164.312(a)(1) Access Controls",
+                  "description": "Implement technical policies and procedures for electronic information systems that maintain electronic protected health information to allow access only to those persons or software programs that have been granted access rights as specified in § 164.308(a)(4).",
+                  "program_id": 2,
+                  "tests": [
+                    {
+                      "id": 1,
+                      "query": "cloudtrailBucketDelete",
+                      "title": "CloudTrail Bucket Delete Policy",
+                      "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
+                      "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
+                      "recommended_action": "Enable MFA delete on the CloudTrail bucket",
+                      "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
+                      "default": true,
+                      "hipaa_enabled": true,
+                      "hipaa_description": "An MFA delete policy helps ensure that individuals attempting to delete CloudTrail logs have verified their identity. HIPAA requires strict access controls for users modifying the environments in which HIPAA data is stored.",
+                      "category_id": 1,
+                      "account_id": null,
+                      "results": [
+                        {
+                          "id": 123456,
+                          "result": 1,
+                          "resource": "arn:aws:s3:::my-sample-bucket",
+                          "message": "Bucket: my-sample-bucket has MFA delete disabled",
+                          "region": "us-east-1",
+                          "discovered": false,
+                          "custom": false,
+                          "created": "2018-02-16T00:31:33.000Z",
+                          "scan_id": 157966
+                        }
+                      ]
+                    }
+                  ]
+                }
+            ]
+
+# Group Deliveries
+
+## Deliveries Collection [/deliveries{?expand,limit,offset}]
+
+"Deliveries" are the term used for scan result reports delivered to a user's email or to an integration's
+endpoint. Deliveries allow for customization over how and when reports are sent. They can be "delivered"
+each time a scan is run or only when new risks are detected. Additionally, deliveries can be customized on
+a per-account basis.
+
+Deliveries use the `send_new_risk` flag to determine whether all scan reports are sent or only when
+new risks are detected.
+
+The API can only be used to get and set "global" deliveries - deliveries tied to account-wide, third-party
+integrations. In other words, the API cannot be used to modify the delivery settings of individual users
+because that is within the control of those users to determine their own email settings.
+
+### GET - List All Deliveries [GET]
+
++ Parameters
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `integration`, `key`
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The delivery ID
+    + `created` (date) - The date of the delivery creation.
+    + `key_id` (number) - The key ID that is associated with the delivery.
+    + `integration_id` (number) - The integration ID that is associated with the delivery.
+    + `send_new_risks` (boolean) - Whether the delivery will be sent only when new risks are detected.
+    
+    + Body
+    
+            [
+                {
+                    "id": 123,
+                    "created": "2017-12-01T06:12:26.000Z",
+                    "key_id": 123,
+                    "integration_id": 11,
+                    "send_new_risks": false
+                }
+            ]
+            
+### POST - Create a New Delivery [POST]
+
++ Request (application/json)
+    + `send_new_risks` (boolean) - Whether the delivery will be sent only when new risks are detected.
+    + `key_id` (number) - The ID of the key to be used with the delivery.
+    + `integration_id` (number) - The ID of the integration to send the delivery to when triggered
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "key_id": 123,
+                "integration_id": 11,
+                "send_new_risks": false
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The delivery ID
+    + `created` (date) - The date time that the delivery was created
+    + `key_id` (number) - The ID of the key associated with the delivery
+    + `integration_id` (number) - The ID of the integration associated with the delivery
+    + `send_new_risks` (boolean) - Whether the delivery will be sent only when new risks are detected.
+    
+    + Body
+
+            {
+                "id": 123,
+                "created": "2017-12-01T06:12:26.000Z",
+                "key_id": 123,
+                "integration_id": 11,
+                "send_new_risks": false
+            }
+
+## Delivery [/deliveries/{id}{?expand}]
+
+### GET - View Delivery Details [GET]
+
++ Parameters
+    + id (number) - ID of the alert
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`, `integration`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The delivery ID
+    + `created` (date) - The date of the delivery creation.
+    + `key_id` (number) - The key ID that is associated with the delivery.
+    + `integration_id` (number) - The integration ID that is associated with the delivery.
+    + `send_new_risks` (boolean) - Whether the delivery will be sent only when new risks are detected.
+    
+    + Body
+    
+            {
+                "id": 123,
+                "created": "2017-12-01T06:12:26.000Z",
+                "key_id": 123,
+                "integration_id": 11,
+                "send_new_risks": false
+            }
+
+### PUT - Update a Delivery [PUT]
+
+Only a delivery's `send_new_risks` field can be updated.
+
++ Request (application/json)
+    + `send_new_risks` (boolean) - Whether the delivery will be sent only when new risks are detected.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "send_new_risks": false
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
+### DELETE - Delete a Delivery [DELETE]
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
 # Group Events
 
 ## Events Collection [/events{?limit,offset,result,region,action,start_date,end_date,key_id,expand,order}]
 
-CloudSploit Events is a Premium Plan feature that integrates with CloudWatch Events to
+CloudSploit Events is a Premium Plan feature that integrates with AWS CloudWatch Events to
 detect security risks in AWS API calls in real-time.
 
 ### GET - List All Events [GET]
@@ -1480,7 +1726,7 @@ is purposefully truncated.
             
 # Group Suppressions
 
-## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id}]
+## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand}]
 
 Suppressions are used to prevent certain results from appearing in future scans. For
 example, suppressing us-east-1 would prevent any results from that region from appearing.
@@ -1489,12 +1735,15 @@ The `key_id`, `region`, and `test_id` filters can be used to reduce the size of 
 result body. They must be used individually (i.e. you cannot filter by _both_ a
 region and test ID).
 
+To include more information about the test or key, pass the `expand` parameter.
+
 ### GET - List All Suppressions [GET]
 
 + Parameters
     + key_id (number, optional) - A key ID filter
     + region (string, optional) - A region filter
     + test_id (number, optional) - A test ID filter
+    + expand (string, optional) - Which fields to expand in the API response. Valid values: `key`, `test`.
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
 
@@ -1802,6 +2051,56 @@ checks against AWS services.
                 }
             ]
 
+### POST - Create a New User [POST]
+
+**NOTE**: This API is restricted and your API key must be whitelisted for access. To do so, please
+contact support@cloudsploit.com. When users are added, they will receive an invite email and must
+click the link to accept the invite and activate their account. Before the account is activated,
+the API can still be used to add the user to new groups, adjust permissions, etc., but the user will
+not be able to log in, and will not receive any other email (scan reports, etc.).
+
++ Request (application/json)
+    + `email` (string) - The email address of the user to add
+    + `account_admin` (boolean) - Whether the user is an account admin
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "email": "user@example.com",
+                "account_admin": true
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The user ID
+    + `email` (string) - The user's email address.
+    + `confirmed` (boolean) - Whether the user has confirmed their email.
+    + `password_reset` (boolean) - Whether the user's password is currently reset.
+    + `send_announcements` (boolean) - Whether the user has opted to receive CloudSploit announcements via email.
+    + `send_scan_results` (boolean) - Whether the user has opted to receive scan reports via email.
+    + `send_new_risks` (boolean) - Whether the user has opted to receive only new risk alerts via email.
+    + `account_admin` (boolean) - Whether the user is an account admin.
+    + `created` (date) - The date of the user creation
+    
+    + Body
+
+            {
+                "id": 1,
+                "email": "user@example.com",
+                "confirmed": false,
+                "password_reset": false,
+                "send_announcements": true,
+                "send_scan_results": true,
+                "send_new_risks": true,
+                "account_admin": true,
+                "created": "2015-07-12T14:35:42.000Z"
+            }
+
 ## Users [/users/{id}{?expand}]
 
 ### GET - View User Details [GET]
@@ -1842,6 +2141,58 @@ checks against AWS services.
                 "created": "2015-07-12T14:35:42.000Z"
             }
             
+### PUT - Update a User [PUT]
+
+The API can only be used to update a user's admin status and cannot be used to modify any of their
+email settings.
+
++ Request (application/json)
+    + `account_admin` (boolean) - The user's admin status
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "account_admin": false
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
+### DELETE - Delete a User [DELETE]
+
+When you remove a user from CloudSploit, their access is revoked entirely and they can no
+longer access the dashboard, receive scan reports, or otherwise interact with the service.
+However, keep in mind that if the user's email address was used as a "third-party" email-based
+integration, or if they belong to a PagerDuty, OpsGenie, or Slack integration, they may
+continue to receive alerts.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
 # Group Scanning APIs
 
 ## Realtime Scan [/realtimes/{id}]
