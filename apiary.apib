@@ -1341,6 +1341,8 @@ the provided IAM role. Be sure to submit a valid role ARN and external ID
 combination. We do not support AWS access key and secret access due to their
 limited security capabilities.
 
+External IDs must be in UUIDv4 format.
+
 The group ID can be obtained by querying the `/v2/groups` endpoint for a list
 of available groups. A group must be provided - the default should be used
 if a custom group is not desired. You may hard-code your custom group ID
@@ -1351,7 +1353,7 @@ After submitting your group, you may upgrade it via a `PUT`.
 + Request (application/json)
     + `name` (string) - The key name
     + `role_arn` (string) - The AWS role ARN for the connection
-    + `external_id` (string) - The AWS role ARN external ID for cross-account access
+    + `external_id` (string) - The AWS role ARN external ID for cross-account access. Must be in UUIDv4 format.
     + `group_id` (number) - The ID of the group with which the key is associated
     
     + Headers
@@ -2173,9 +2175,10 @@ email settings.
 
 When you remove a user from CloudSploit, their access is revoked entirely and they can no
 longer access the dashboard, receive scan reports, or otherwise interact with the service.
-However, keep in mind that if the user's email address was used as a "third-party" email-based
-integration, or if they belong to a PagerDuty, OpsGenie, or Slack integration, they may
-continue to receive alerts.
+However, if the user's email address was used as a third-party email-based integration
+they may continue to receive alerts. Integrations such as (but not limited to)
+PagerDuty, OpsGenie, and Slack will require you to remove the user from those third-party
+services (e.g. remove the user from the Slack group).
 
 + Request (application/json)
 
