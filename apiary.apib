@@ -454,6 +454,61 @@ For security and logistical reasons, you cannot delete or create API keys using 
                 "account_id": 1
             }
 
+# Group Audit Logs
+
+## Audit Logs Collection [/auditlogs{?limit,offset,start_date,end_date}]
+
+Audit Logs are an opt-in, Premium Plan feature for users. If you would like audit logging enabled, please
+open a support ticket and it will be enabled globally for your accounts.
+
+Audit logging tracks API calls to sensitive CloudSploit endpoints. Please note that these logs are _not_
+related to AWS usage, but rather the usage of CloudSploit services by your account's users.
+
+Only one of `user` or `apikey` will be returned in the response, depending on which type invoked the audited
+API call.
+
+### GET - List All Audit Logs [GET]
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + start_date (string, optional) - A filter for date range. Format: YYYY-MM-DD.
+    + end_date (string, optional) - A filter for date range. Format: YYYY-MM-DD.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The audit log ID
+    + `ip_address` (string) - The IP address of the invoking user
+    + `resource` (string) - The affected CloudSploit endpoint resource
+    + `resource_id` (number) - The ID of the affected CloudSploit endpoint resource
+    + `action` (string) - The HTTP verb action taken on the resource (GET, POST, DELETE, etc.)
+    + `message` (string) - A description of the action
+    + `user` (object) - A user object containing an `email` property of the user performing the action
+    + `apikey` (object) - An API key object containing the `access_key` property of the API key performing the action.
+    
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "ip_address": "123.1.2.3",
+                    "resource": "apikeys",
+                    "resource_id": 123,
+                    "action": "DELETE",
+                    "message": "An API key was deleted"
+                    "user": {
+                        "email": "test@example.com"
+                    }
+                }
+            ]
+
 # Group Categories
 
 ## Categories Collection [/categories{?limit,offset}]
@@ -1044,6 +1099,30 @@ via a separate PUT.
                 data: {}
             }
 
+### DELETE - Delete a Group [DELETE]
+
+The `default` group cannot be deleted. Additionally, groups cannot be deleted
+if they still contain users or connected AWS accounts. These must be deleted
+first.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Integrations
 
 ## Integrations Collection [/integrations{?limit,offset}]
@@ -1550,6 +1629,226 @@ permanently delete the key before continuing.
                 data: {}
             }
 
+# Group Routings
+
+## Routings Collection [/routings{?limit,offset,expand}]
+
+Routings are mappings of an AWS account (key) to integrations when a particular set of conditions (settings)
+are met. Routings are to Real Time Events as Alerts are to Background Scans.
+
+### GET - List All Routings [GET]
+
+A list of all AWS routings that have been created in the account.
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + expand (string, optional) - Whether to expand the `key` or `integration` attached to the routing
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    'id', 'created', 'key_id', 'enabled', 'settings', 'result'
+
+    + `id` (number) - The routing ID
+    + `created` (date) - The date of the routing creation
+    + `key_id` (number) - The ID of the key with which the routing is associated
+    + `enabled` (boolean) - Whether the routing is enabled
+    + `settings` (object) - The settings for the integration
+        + `actions` (array) - A list of AWS API call actions on which to trigger the routing
+    + `result` (number) - The WARN (1) or FAIL (2) result on which to trigger the routing
+    + `integrations` (array) - A list of integration objects
+    
+    + Body
+
+            [
+                {
+                    "id": 13,
+                    "created": "2017-02-19T02:46:43.000Z",
+                    "key_id": 123,
+                    "enabled": false,
+                    "settings": {
+                        "actions": [
+                            "*"
+                        ]
+                    },
+                    "result": 2,
+                    "key": {},
+                    "integrations": [{}]
+                }
+            ]
+
+### POST - Create a New Routing [POST]
+
+To submit a routing, you must include a key ID and a list of integration IDs.
+Additionally, the result (1 or 2 for WARN and FAIL, respectively) determines when
+CloudSploit will trigger the routing to the integration. The settings object must
+contain a list of `actions` on which the routing will be enacted. These actions are
+a list of AWS API calls, with support for wildcards. For example, the following
+actions could be defined:
+```
+ec2:AuthorizeSecurityGroupEgress
+iam:*
+```
+
+For a full list of supported actions, please see the [routings page](https://console.cloudsploit.com/routings)
+in the console.
+
++ Request (application/json)
+    + `enabled` (boolean) Whether the routing is enabled or not
+    + `key_id` (number) The ID of the associated key
+    + `integration_ids` (array) An array of integration IDs
+    + `result` (number) Whether a 1 (WARN) or 2 (FAIL) result should trigger the routing
+    + `actions` (array) An array of action strings
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "enabled": true,
+                "key_id": 123,
+                "integration_ids": [1, 5, 6],
+                "result": 2,
+                "actions": ["ec2:AuthorizeSecurityGroupEgress"]
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The routing ID
+    + `created` (date) - The date of the routing creation
+    + `key_id` (number) - The ID of the key with which the routing is associated
+    + `enabled` (boolean) - Whether the routing is enabled
+    + `settings` (object) - The settings for the integration
+        + `actions` (array) - A list of AWS API call actions on which to trigger the routing
+    + `result` (number) - The WARN (1) or FAIL (2) result on which to trigger the routing
+    + `integrations` (array) - A list of integration objects
+    
+    + Body
+
+            {
+                "id": 13,
+                "created": "2017-02-19T02:46:43.000Z",
+                "key_id": 123,
+                "enabled": true,
+                "settings": {
+                    "actions": [
+                        "ec2:AuthorizeSecurityGroupEgress"
+                    ]
+                },
+                "result": 2,
+                "key": {...},
+                "integrations": [{...}]
+            }
+
+## Routing [/routings/{id}]
+
+### GET - View Routing Details [GET]
+
++ Parameters
+    + id (number) - ID of the routing
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `enabled` (boolean) Whether the routing is enabled or not
+    + `key_id` (number) The ID of the associated key
+    + `integration_ids` (array) An array of integration IDs
+    + `result` (number) Whether a 1 (WARN) or 2 (FAIL) result should trigger the routing
+    + `actions` (array) An array of action strings
+    
+    + Body
+
+            {
+                "id": 13,
+                "created": "2017-02-19T02:46:43.000Z",
+                "key_id": 123,
+                "enabled": true,
+                "settings": {
+                    "actions": [
+                        "ec2:AuthorizeSecurityGroupEgress"
+                    ]
+                },
+                "result": 2,
+                "key": {...},
+                "integrations": [{...}]
+            }
+
+### PUT - Update a Routing [PUT]
+
+Routings can be updated to change their associated key, integrations, result,
+or actions.
+
+
++ Request (application/json)
+    + `enabled` (boolean) Whether the routing is enabled or not
+    + `key_id` (number) The ID of the associated key
+    + `integration_ids` (array) An array of integration IDs
+    + `result` (number) Whether a 1 (WARN) or 2 (FAIL) result should trigger the routing
+    + `actions` (array) An array of action strings
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "enabled": false,
+                "actions": ["*"],
+                "key_id": 124,
+                "integration_ids": [1, 2, 3]
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
+
+### DELETE - Delete a Routing [DELETE]
+
+Deleting a routing means that no further integration invocations will
+be made for the specified settings and key.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Scans
             
 ## Scans Collection [/scans{?limit,offset,key_id,start_date,end_date}]
@@ -1564,6 +1863,7 @@ additional metadata, including the number of passing, warning, failing, and unkn
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
     + key_id (number, optional) - An ID of the key to filter scan results. If not provided, all scans across all keys will be returned.
+    + group_ids (string, optional) - A comma-separated list of groups for scans to return.
     + start_date (string, optional) - A start date for filtering. Format: YYYY-MM-DD.
     + end_date (string, optional) - An end date for filtering. Format: YYYY-MM-DD.
 
