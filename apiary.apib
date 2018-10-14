@@ -2221,6 +2221,25 @@ the three.
 Tests (also called "plugins") are the engine behind the scans. They execute the various
 checks against AWS services.
 
+Each test has a severity ranking. This ranking can be overridden per-account.
+The default ranking (provided by CloudSploit) is available in the `severity`
+field. If the test has an override for the account being queried, the response
+will also contain a `severities` property, with the first element in the array
+being the overriding severity ranking object.
+```
+{
+    "severity": "medium",
+    "severities": [
+        {
+            "id": 1,
+            "severity": "high"
+        }
+    ]
+}
+In the above example, the test had a default severity of "medium", but the
+account had overridden this severity as a "high."
+```
+
 ### GET - List All Tests [GET]
 
 + Parameters
@@ -2241,9 +2260,11 @@ checks against AWS services.
     + `title` (string) - The title of the test.
     + `description` (string) - A description of what the test does.
     + `more_info` (string) - A longer description of the risk being checked by the test.
+    + `severity` (string) - A ranking (`high`, `medium`, or `low`) of how severe the test check is.
     + `recommended_action` (string) - Remediation information for the user.
     + `link` (string) - A link to AWS documentation for steps to remediate the risk.
     + `category_id` (number) - The ID of the category for this suppression.
+    + `severities` (array) - (Optional) An array of severity overrides.
     
     + Body
 
@@ -2254,6 +2275,7 @@ checks against AWS services.
                     "title": "CloudTrail Bucket Delete Policy",
                     "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
                     "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
+                    "severity": "medium",
                     "recommended_action": "Enable MFA delete on the CloudTrail bucket",
                     "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
                     "category_id": 1
@@ -2264,6 +2286,7 @@ checks against AWS services.
                     "title": "CloudTrail Enabled",
                     "description": "Ensures CloudTrail is enabled for all regions within an account",
                     "more_info": "CloudTrail should be enabled for all regions in order to detect suspicious activity in regions that are not typically used.",
+                    "severity": "high",
                     "recommended_action": "Enable CloudTrail for all regions and ensure that at least one region monitors global service events",
                     "link": "http://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-getting-started.html",
                     "category_id": 1
@@ -2291,9 +2314,11 @@ checks against AWS services.
     + `title` (string) - The title of the test.
     + `description` (string) - A description of what the test does.
     + `more_info` (string) - A longer description of the risk being checked by the test.
+    + `severity` (string) - A ranking (`high`, `medium`, or `low`) of how severe the test check is.
     + `recommended_action` (string) - Remediation information for the user.
     + `link` (string) - A link to AWS documentation for steps to remediate the risk.
     + `category_id` (number) - The ID of the category for this suppression.
+    + `severities` (array) - (Optional) An array of severity overrides.
     
     + Body
 
