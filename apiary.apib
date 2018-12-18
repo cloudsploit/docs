@@ -2028,7 +2028,7 @@ is purposefully truncated.
             
 # Group Suppressions
 
-## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand}]
+## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand,global}]
 
 Suppressions are used to prevent certain results from appearing in future scans. For
 example, suppressing us-east-1 would prevent any results from that region from appearing.
@@ -2041,10 +2041,13 @@ To include more information about the test or key, pass the `expand` parameter.
 
 ### GET - List All Suppressions [GET]
 
+Note: Global suppressions will not have `key_id` or `key` properties.
+
 + Parameters
     + key_id (number, optional) - A key ID filter
     + region (string, optional) - A region filter
     + test_id (number, optional) - A test ID filter
+    + global (string, optional) - Whether global-only suppressions should be returned (set to "true" or "false"; "false" is default).
     + expand (string, optional) - Which fields to expand in the API response. Valid values: `key`, `test`.
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
@@ -2061,7 +2064,7 @@ To include more information about the test or key, pass the `expand` parameter.
     + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
     + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
     + `created` (date) - The date of the suppression creation
-    + `key_id` (number) - The ID of the key for this suppression.
+    + `key_id` (number) - The ID of the key for this suppression. If `null`, the suppression is global.
     + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
     + `key` (object) - The associated key object.
     
@@ -2092,7 +2095,8 @@ To include more information about the test or key, pass the `expand` parameter.
 
 ### POST - Create a New Suppression [POST]
 
-A suppression always applies to a key via the `key_id` property. The suppression
+A suppression either applies to a key via the `key_id` property or is a global
+suppression via the lack of a `key_id` property. The suppression
 must then also contain one of the following:
 
 1. `region` - An AWS region to suppress
@@ -2151,6 +2155,8 @@ the three.
 ## Suppressions [/suppressions/{id}]
 
 ### GET - View Suppression Details [GET]
+
+Note: Global suppressions will not have `key_id` or `key` properties.
 
 + Parameters
     + id (number) - ID of the suppression
