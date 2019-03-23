@@ -1149,7 +1149,7 @@ Integrations with Slack, SNS, etc. can be listed via the GET call.
     + `id` (number) - The integration ID
     + `settings` (object) - The settings for the integration. Note that these are different for each integration type.
     + `name` (string) - The integration name
-    + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`
+    + `type` (string) - The type of integration. Valid values: `slack`, `sns`, `email`, `pagerduty`, `teams`, `opsgenie`
     + `enabled` (boolean) - Whether the integration is enabled
     + `send_scan_results` (boolean) - Whether the integration will be sent scan result summaries
     + `created` (date) - The date of the integration creation
@@ -1196,7 +1196,7 @@ Integrations with Slack, SNS, etc. can be listed via the GET call.
 
 + Request (application/json)
     + `name` (string) - The name for the integration
-    + `type` (string) - The type of integration to create. Valid values: `slack`, `pagerduty`, `email`, `sns`, `opsgenie`
+    + `type` (string) - The type of integration to create. Valid values: `slack`, `pagerduty`, `email`, `sns`, `opsgenie`, `teams`
     + `enabled` (boolean) - Whether the integration is enabled.
     + `send_scan_results` (boolean) - Whether scan result summaries should be sent to this integration.
     + `send_new_risks` (boolean) - Whether scan result summaries should only be sent to this integration if new risks are detected.
@@ -1356,7 +1356,7 @@ be sent within 5 minutes.
 
 # Group Keys
 
-## Keys Collection [/keys{?limit,offset,paid}]
+## Keys Collection [/keys{?limit,offset,paid,cloud}]
 
 Keys are AWS accounts that are connected to CloudSploit. Do not confuse these with AWS
 access keys or with CloudSploit API keys.
@@ -1370,6 +1370,7 @@ response will never contain the external ID used with the account.
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
     + paid (boolean, optional) - An offset value for pagination.
+    + cloud (string, optional) - A cloud filter (`aws`, `azure`)
 
 + Request (application/json)
     + Headers
@@ -1381,6 +1382,7 @@ response will never contain the external ID used with the account.
 + Response 200 (application/json)
     + `id` (number) - The key ID
     + `name` (string) - The key name
+    + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
     + `last_scanned` (date) - The date of the last background scan
     + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
     + `role_arn` (string) - The AWS role ARN for the connection
@@ -1397,6 +1399,7 @@ response will never contain the external ID used with the account.
                 {
                     "id": 1,
                     "name": "cloudsploit-demo",
+                    "cloud": "aws"
                     "last_scanned": "2016-10-02T03:41:21.000Z",
                     "scan_disabled": false,
                     "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
@@ -1431,6 +1434,7 @@ After submitting your group, you may upgrade it via a `PUT`.
 
 + Request (application/json)
     + `name` (string) - The key name
+    + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
     + `role_arn` (string) - The AWS role ARN for the connection
     + `external_id` (string) - The AWS role ARN external ID for cross-account access. Must be in UUIDv4 format.
     + `group_id` (number) - The ID of the group with which the key is associated
@@ -1445,6 +1449,7 @@ After submitting your group, you may upgrade it via a `PUT`.
     
             {
                 "name": "mynewkey",
+                "cloud": "aws",
                 "role_arn": "arn:aws:iam::012345678911:role/mynewkey",
                 "external_id": "65aca4f7-4eae-45a1-879c-56baf2c730b3",
                 "group_id": 1
@@ -1453,6 +1458,7 @@ After submitting your group, you may upgrade it via a `PUT`.
 + Response 201 (application/json)
     + `id` (number) - The key ID
     + `name` (string) - The key name
+    + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
     + `last_scanned` (date) - The date of the last background scan
     + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
     + `role_arn` (string) - The AWS role ARN for the connection
@@ -1468,6 +1474,7 @@ After submitting your group, you may upgrade it via a `PUT`.
             {
                 "id": 1,
                 "name": "mynewkey",
+                "cloud": "aws",
                 "last_scanned": "2016-10-02T03:41:21.000Z",
                 "scan_disabled": false,
                 "role_arn": "arn:aws:iam::012345678911:role/mynewkey",
@@ -1500,6 +1507,7 @@ After submitting your group, you may upgrade it via a `PUT`.
 + Response 200 (application/json)
     + `id` (number) - The key ID
     + `name` (string) - The key name
+    + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
     + `last_scanned` (date) - The date of the last background scan
     + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
     + `role_arn` (string) - The AWS role ARN for the connection
@@ -1515,6 +1523,7 @@ After submitting your group, you may upgrade it via a `PUT`.
             {
                 "id": 1,
                 "name": "cloudsploit-demo",
+                "cloud": "aws",
                 "last_scanned": "2016-10-02T03:41:21.000Z",
                 "scan_disabled": false,
                 "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
@@ -1970,6 +1979,7 @@ is purposefully truncated.
                 "key": {
                     "id": 1,
                     "name": "cloudsploit-demo",
+                    "cloud": "aws",
                     "last_scanned": "2016-10-21T05:51:34.000Z",
                     "scan_disabled": false,
                     "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
@@ -2028,7 +2038,7 @@ is purposefully truncated.
             
 # Group Suppressions
 
-## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand,global}]
+## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand}]
 
 Suppressions are used to prevent certain results from appearing in future scans. For
 example, suppressing us-east-1 would prevent any results from that region from appearing.
@@ -2041,13 +2051,10 @@ To include more information about the test or key, pass the `expand` parameter.
 
 ### GET - List All Suppressions [GET]
 
-Note: Global suppressions will not have `key_id` or `key` properties.
-
 + Parameters
     + key_id (number, optional) - A key ID filter
     + region (string, optional) - A region filter
     + test_id (number, optional) - A test ID filter
-    + global (string, optional) - Whether global-only suppressions should be returned (set to "true" or "false"; "false" is default).
     + expand (string, optional) - Which fields to expand in the API response. Valid values: `key`, `test`.
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
@@ -2064,7 +2071,7 @@ Note: Global suppressions will not have `key_id` or `key` properties.
     + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
     + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
     + `created` (date) - The date of the suppression creation
-    + `key_id` (number) - The ID of the key for this suppression. If `null`, the suppression is global.
+    + `key_id` (number) - The ID of the key for this suppression.
     + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
     + `key` (object) - The associated key object.
     
@@ -2095,8 +2102,7 @@ Note: Global suppressions will not have `key_id` or `key` properties.
 
 ### POST - Create a New Suppression [POST]
 
-A suppression either applies to a key via the `key_id` property or is a global
-suppression via the lack of a `key_id` property. The suppression
+A suppression always applies to a key via the `key_id` property. The suppression
 must then also contain one of the following:
 
 1. `region` - An AWS region to suppress
@@ -2155,8 +2161,6 @@ the three.
 ## Suppressions [/suppressions/{id}]
 
 ### GET - View Suppression Details [GET]
-
-Note: Global suppressions will not have `key_id` or `key` properties.
 
 + Parameters
     + id (number) - ID of the suppression
@@ -2222,7 +2226,7 @@ Note: Global suppressions will not have `key_id` or `key` properties.
             
 # Group Tests
 
-## Tests Collection [/tests{?limit,offset,expand}]
+## Tests Collection [/tests{?limit,offset,expand,cloud}]
 
 Tests (also called "plugins") are the engine behind the scans. They execute the various
 checks against AWS services.
@@ -2252,6 +2256,7 @@ account had overridden this severity as a "high."
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
     + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `category`
+    + cloud (string, optional) - Filter for the test cloud (`aws`, `azure`)
 
 + Request (application/json)
     + Headers
@@ -2264,6 +2269,7 @@ account had overridden this severity as a "high."
     + `id` (number) - The test ID
     + `query` (string) - The shorthand referenced used internally for the test.
     + `title` (string) - The title of the test.
+    + `cloud` (string) - The test cloud (`aws`, `azure`, etc).
     + `description` (string) - A description of what the test does.
     + `more_info` (string) - A longer description of the risk being checked by the test.
     + `severity` (string) - A ranking (`high`, `medium`, or `low`) of how severe the test check is.
@@ -2278,6 +2284,7 @@ account had overridden this severity as a "high."
                 {
                     "id": 1,
                     "query": "cloudtrailBucketDelete",
+                    "cloud": "aws",
                     "title": "CloudTrail Bucket Delete Policy",
                     "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
                     "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
@@ -2289,6 +2296,7 @@ account had overridden this severity as a "high."
                 {
                     "id": 2,
                     "query": "cloudtrailEnabled",
+                    "cloud": "aws",
                     "title": "CloudTrail Enabled",
                     "description": "Ensures CloudTrail is enabled for all regions within an account",
                     "more_info": "CloudTrail should be enabled for all regions in order to detect suspicious activity in regions that are not typically used.",
@@ -2317,6 +2325,7 @@ account had overridden this severity as a "high."
 + Response 200 (application/json)
     + `id` (number) - The test ID
     + `query` (string) - The shorthand referenced used internally for the test.
+    + `cloud` (string) - The test cloud (`aws`, `azure`, etc).
     + `title` (string) - The title of the test.
     + `description` (string) - A description of what the test does.
     + `more_info` (string) - A longer description of the risk being checked by the test.
@@ -2331,6 +2340,7 @@ account had overridden this severity as a "high."
             {
                 "id": 1,
                 "query": "cloudtrailBucketDelete",
+                "cloud": "aws",
                 "title": "CloudTrail Bucket Delete Policy",
                 "description": "Ensures CloudTrail logging bucket has a policy to prevent deletion of logs without an MFA token",
                 "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
