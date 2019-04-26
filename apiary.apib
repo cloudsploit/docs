@@ -509,6 +509,60 @@ API call.
                 }
             ]
 
+# Group Audits
+
+## Audits Collection [/audits{?test_id}]
+
+Audits return a list of all results for all accounts given a specific test. These results are useful
+to see all results across all accounts in your entire AWS environment.
+
+### GET - List All Audits [GET]
+
++ Parameters
+    + test_id (number) - An ID of the test to audit.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The key ID (connected account)
+    + `name` (string) - The name of the connected account
+    + `scans` (array) - A list of scans for this account (always the most recent)
+        + `id` (number) - The scan ID
+        + `results` (array) - The results of the scan for the provided test_id
+            + `result` (number) - The result of the test (`0` for `PASS`, `1` for `WARN`, `2` for `FAIL`, and `3` for `UNKNOWN`)
+            + `resource` (string) - If applicable, the affected resource ARN or other identifier
+            + `message` (string) - The test message output
+            + `region` (string) - The affected AWS region
+            + `scan_id` (number) - The ID of the scan
+
+    + Body
+    
+            [
+                {
+                    "id": 123,
+                    "name": "My Account",
+                    "scans": [
+                        {
+                            "id": 12345,
+                            "results": [
+                                {
+                                "result": 2,
+                                "scan_id": 12345,
+                                "region": "us-east-1",
+                                "resource": "some resource",
+                                "message": "This test failed."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+
 # Group Categories
 
 ## Categories Collection [/categories{?limit,offset}]
