@@ -1692,6 +1692,59 @@ permanently delete the key before continuing.
                 data: {}
             }
 
+# Group Programs
+
+## Programs Collection [/programs{?limit,offset,expand}]
+
+Programs are a collection of compliance controls such as "PCI",
+"HIPAA", or a custom program.
+
+### GET - List All Programs [GET]
+
+A list of all programs that are available in the account.
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    'id', 'name', 'description', 'account_id'
+
+    + `id` (number) - The program ID
+    + `name` (string) - Name of the compliance program
+    + `description` (string) - Description of the compliance program
+    + `account_id` (number) - The ID of the account for which the program is associated. If not set, the program is public.
+    
+    + Body
+
+            [
+                {
+                  "id": 1,
+                  "name": "PCI",
+                  "description": "The Payment Card Industry Data Security Standard (PCI DSS) is a set of security standards designed to ensure that ALL companies that accept, process, store or transmit credit card information maintain a secure environment.",
+                  "account_id": null
+                },
+                {
+                  "id": 2,
+                  "name": "HIPAA",
+                  "description": "HIPAA (Health Insurance Portability and Accountability Act of 1996) is United States legislation that provides data privacy and security provisions for safeguarding medical information.",
+                  "account_id": null
+                },
+                {
+                  "id": 3,
+                  "name": "Custom Controls",
+                  "description": "Custom compliance program",
+                  "account_id": 1234
+                }
+            ]
+
 # Group Routings
 
 ## Routings Collection [/routings{?limit,offset,expand}]
@@ -2815,4 +2868,4 @@ If you provide a `settings` object, you must specify the `WEB_PORTS` and
                     "message": "Launch configuration does not specify inline block device mappings.",
                     "resource": "LaunchConfig"
                 }
-            ]in
+            ]
