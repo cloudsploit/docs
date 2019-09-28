@@ -2456,6 +2456,35 @@ account had overridden this severity as a "high."
                 "category_id": 1
             }
             
+### PUT - Update a Test [PUT]
+
+You can modify a test's severity level only at this time.
+
++ Request (application/json)
+    + `severity` (string) - The severity level to override. Either "low", "medium", "high", or "critical".
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "severity": "medium"
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Users
 
 ## Users Collection [/users{?limit,offset,expand}]
