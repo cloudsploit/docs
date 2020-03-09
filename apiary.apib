@@ -2799,11 +2799,6 @@ When a scan is `IN_PROGRESS` or `COMPLETE` the `message` will be `null`.
             
 ## CloudFormation Scan [/cloudformations]
 
-The realtime API operates on a "submit and poll" model. Because CloudSploit
-scans can take up to 5 minutes to complete, we cannot return the results to
-the initial API call. Instead, after submitting a scan request, an ID is
-returned which can be used to poll for results.
-
 ### Create a CloudFormation Scan [POST]
 
 CloudFormation scans will return the scan results for a CloudFormation security
@@ -2896,5 +2891,46 @@ If you provide a `settings` object, you must specify the `WEB_PORTS` and
                     "status": 0,
                     "message": "Launch configuration does not specify inline block device mappings.",
                     "resource": "LaunchConfig"
+                }
+            ]
+
+## Terraform Scan [/terraforms]
+
+### Create a Terraform Scan [POST]
+
+Terraform scans will return the scan results for a Terraform security
+risk check to the original request and do not need to be polled. You will need
+to submit the Terraform template in base64 format.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+
+            {
+                "base64": "IyBDbG91ZEZvcm1hdGlvbiBZQU1MIHRlbXBsYXRlIG..."
+            }
+
++ Response 200 (application/json)
+    + `result` (number) - The status of the result: `0` for `PASS`, `1` for `WARN`, and `2` for `FAIL`
+    + `message` (string) - A description of the result
+    + `link` (string) - A link to the test description
+    + `location` (object) - An object with start and end line numbers where the issue was detected.
+    
+    + Body
+
+            [
+                {
+                    "result": 2,
+                    "message": "Some risk occurred",
+                    "link": "https://terraform-errors.example/link",
+                    "location": {
+                        "start_line": 12,
+                        "end_line": 15
+                    }
                 }
             ]
