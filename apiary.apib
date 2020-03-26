@@ -2702,6 +2702,7 @@ The following properties should be submitted:
 
 + `key_id` (number) - The ID of the key to scan.
 + `test_ids` (array) - An array of test IDs to use in the scan (optional). If this property is not provided, all tests will be used.
++ `save` (boolean) - Whether the scan should be saved in the console for historical records. If set to `true`, the scan report will be saved by CloudSploit.
 
 + Request (application/json)
     + Headers
@@ -2714,7 +2715,8 @@ The following properties should be submitted:
 
             {
                 "key_id": 1,
-                "test_ids": [1, 2, 3]
+                "test_ids": [1, 2, 3],
+                "save": true
             }
 
 + Response 200 (application/json)
@@ -2785,6 +2787,7 @@ When a scan is `IN_PROGRESS` or `COMPLETE` the `message` will be `null`.
                         "more_info": "To provide additional security, CloudTrail logging buckets should require an MFA token to delete objects",
                         "recommended_action": "Enable MFA delete on the CloudTrail bucket",
                         "link": "http://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html#MultiFactorAuthenticationDelete",
+                        "severity": "low",
                         "results": [
                             {
                                 "status": 1,
