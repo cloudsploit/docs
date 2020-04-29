@@ -2905,6 +2905,14 @@ Terraform scans will return the scan results for a Terraform security
 risk check to the original request and do not need to be polled. You will need
 to submit the Terraform template in base64 format.
 
+If you have a folder containing Terraform modules, you can scan all of them
+in a single request by passing the base64 of a ZIP file rather than a single
+file. When passing base64 of a ZIP file, you must also set the `folder`
+property to `true`.
+
++ `folder` (boolean) - (Optional) If set to `true`, the base64 is of a ZIP file.
++ `base64` (string) - The YAML string of the CloudFormation template converted to a base64 string.
+
 + Request (application/json)
     + Headers
     
