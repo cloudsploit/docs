@@ -1489,9 +1489,26 @@ After submitting your group, you may upgrade it via a `PUT`.
 + Request (application/json)
     + `name` (string) - The key name
     + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
-    + `role_arn` (string) - The AWS role ARN for the connection
-    + `external_id` (string) - The AWS role ARN external ID for cross-account access. Must be in UUIDv4 format.
+    + `role_arn` (string) - (Optional: AWS only) The AWS role ARN for the connection
+    + `external_id` (string) - (Optional: AWS only) The AWS role ARN external ID for cross-account access. Must be in UUIDv4 format.
     + `group_id` (number) - The ID of the group with which the key is associated
+    + `connection` (object) - The connection property for the key (non-AWS)
+        + `azure` (object) - (Optional: Azure only) The Azure connection
+            + `application_id` - The Azure Application ID
+            + `key_value` - The Azure Key Value
+            + `directory_id` - The Azure Directory ID
+            + `subscription_id` - The Azure Subscription ID
+        + `oracle` (object) - (Optional: Oracle only) The Oracle connection
+            + `tenancy_id` - The Oracle Tenancy ID
+            + `user_id` - The Oracle User ID
+            + `key_fingerprint` - The Oracle Key Fingerprint
+            + `key_value` - The Oracle Key Value
+            + `compartment_id`  - The Oracle Compartment ID
+        + `google` (object) - (Optional: Google only) The Google connection
+            + `type` - The Google Project Type
+            + `project_id` - The Google Project ID
+            + `client_email` - The Google Project Email 
+            + `private_key`  - The Google Project Private Key
     
     + Headers
     
