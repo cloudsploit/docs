@@ -2268,8 +2268,8 @@ To include more information about the test or key, pass the `expand` parameter.
 
 ### POST - Create a New Suppression [POST]
 
-A suppression always applies to a key via the `key_id` property. The suppression
-must then also contain one of the following:
+A suppression always applies to a key via the `key_id` property or to all keys by ommitting
+the `key_id` property. The suppression must then also contain one of the following:
 
 1. `region` - An AWS region to suppress
 2. `resource` - A free-form text field (1 - 255 characters) to suppress specific resources.
@@ -2280,6 +2280,11 @@ these suppression types and does not support suppressing both a region and a
 resource or test simultaneously. For example, you can suppress the us-east-1
 region, but not a specific test in that region only.
 
+You may also pass in the following optional fields:
+
+1. `comment` - A note explaining why the suppression is being added
+2. `expires` - A date (`YYYY-MM-DD` format) for when the suppression should expire.
+
 Note: The API example shown here includes a region, test ID, and resource for
 demonstration purposes only. Valid API requests will only contain one of
 the three.
@@ -2289,6 +2294,8 @@ the three.
     + `region` (string) - The AWS region
     + `resource` (string) - A resource string, usually an AWS ARN
     + `test_id` (number) - The ID of the test to suppress
+    + `comment` (string) - Optional. A comment for the suppression.
+    + `expires` (string) - Optional. A `YYYY-MM-DD` formatted date for when the suppression should expire.
     
     + Headers
     
@@ -2312,6 +2319,8 @@ the three.
     + `resource` (string) - The resource string
     + `test_id` (number) - The test ID
     + `created` (date) - The date of the integration creation
+    + `comment` (string) - The suppression comment
+    + `expires` (date) - When the suppression will expire
     
     + Body
 
@@ -2321,7 +2330,9 @@ the three.
                 "region": "us-east-1",
                 "resource": "arn::s3:my-bucket",
                 "test_id": 10,
-                "created": "2015-09-01T04:47:57.000Z"
+                "created": "2015-09-01T04:47:57.000Z",
+                "comment" : "This is an example",
+                "expires": "2021-09-01T04:47:57.000Z"
             }
 
 ## Suppressions [/suppressions/{id}]
@@ -2343,6 +2354,8 @@ the three.
     + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
     + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
     + `created` (date) - The date of the suppression creation
+    + `comment` (string) - The suppression comment
+    + `expires` (date) - When the suppression will expire
     + `key_id` (number) - The ID of the key for this suppression.
     + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
     + `key` (object) - The associated key object.
@@ -2354,6 +2367,8 @@ the three.
                 "region": "ap-northeast-2",
                 "resource": null,
                 "created": "2016-05-07T05:02:13.000Z",
+                "comment" : "This is an example",
+                "expires": "2021-09-01T04:47:57.000Z"
                 "key_id": 1,
                 "test_id": null,
                 "key": {
