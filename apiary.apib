@@ -626,6 +626,50 @@ modify existing ones.
                 "name": "EC2"
             }
 
+# Group Generated IDs
+
+Generated IDs are required to onboard an AWS account via the API. The generated ID is a UUID that
+has been generated on your behalf by the Aqua Cloud system. When connecting the cloud account, you
+must pass the same generated ID as the external ID for the connection to work.
+
+## Generated IDs Collection [/generatedids]
+
+### POST - Create a Generated ID [POST]
+
+You may request up to 50 generated IDs at once.
+
++ Request (application/json)
+    + `count` (number) - The number of generated IDs to generate - between `1` and `50`.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "count": 2
+            }
+
++ Response 201 (application/json)
+    + `generated_id` (string) - The generated UUID
+    + `account_id` (number) - The account ID mapped to the IDs
+    
+    + Body
+
+            [
+                {
+                    "generated_id": "d1ca9505-393c-4efb-ad9a-314c34c20f93",
+                    "account_id": 123
+                },
+                {
+                    "generated_id": "72e4e642-a585-4ca9-88f7-10534cbcae6e",
+                    "account_id": 123
+                }
+            ]
+
 # Group Compliances
 
 ## Compliances Collection [/compliances{?scan_id,program_id}]
