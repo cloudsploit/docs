@@ -2246,6 +2246,97 @@ is purposefully truncated.
                 data: {}
             }
             
+## Scans V2 [/scansv2/{id}{?page}]
+
+### GET - View Scan Details [GET]
+
+The scansv2 endpoint was created to handle scan reports that exceed the maximum size allowed
+by the `/scans` endpoint. This new endpoint does not attach the plugin data to each result
+and also supports pagination.
+
+Unlike the original endpoint, the v2 endpoint does not include the expanded test object for
+every result. To obtain the test data, we recommend doing the following:
+
+1. Query `/tests`
+2. Save a map of test_id -> test object
+3. Query this `/scansv2` endpoint
+4. Use the result `test_id` field to locate the test from the map in step 2.
+
+*Pagination*
+If the scan object contains a `next` field, you can use this value, combined
+with the `page` query string parameter to obtain the next page of results,
+continuing until the `next` field is null.
+
++ Parameters
+    + id (number) - ID of the scan
+    + page (number, optional) - A pagination parameter.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The scan ID
+    + `key_id` (number) - The associated key ID
+    + `num_pass` (number) - The number of passing results in the scan
+    + `num_warn` (number) - The number of warning results in the scan
+    + `num_fail` (number) - The number of failing results in the scan
+    + `num_unknown` (number) - The number of unknown results in the scan
+    + `num_new_risks` (number) - The number of newly detected risk results in the scan
+    + `created` (date) - The date of the scan creation
+    + `next` (number) - If there are more results, this stringifies the value to pass to the `page` query.
+    + `key` (object) - The associated key data
+    + `results` (array) - The associated results for the scan
+        + `id` (number) - The unique result ID
+        + `result` (number) - The result of the test (`0` for `PASS`, `1` for `WARN`, `2` for `FAIL`, and `3` for `UNKNOWN`)
+        + `resource` (string) - If applicable, the affected resource ARN or other identifier
+        + `message` (string) - The test message output
+        + `region` (string) - The affected AWS region
+        + `discovered` (boolean) - Whether the result was newly discovered during this scan (as opposed to during a previous scan)
+        + `created` (date) - The date of the result creation
+        + `test_id` (number) - The ID of the associated test
+    
+    + Body
+
+            {
+                "id": 1,
+                "key_id": 1,
+                "num_pass": 182,
+                "num_warn": 35,
+                "num_fail": 48,
+                "num_unknown": 1,
+                "num_new_risks": 1,
+                "created": "2016-10-20T05:46:23.000Z",
+                "key": {
+                    "id": 1,
+                    "name": "cloudsploit-demo",
+                    "cloud": "aws",
+                    "last_scanned": "2016-10-21T05:51:34.000Z",
+                    "scan_disabled": false,
+                    "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-demo",
+                    "paid": true,
+                    "cloudtrail_connected": true,
+                    "interval": 24,
+                    "created": "2015-09-01T04:47:57.000Z",
+                    "group_id": 1
+                },
+                "results": [
+                    {
+                        "id": 1,
+                        "result": 0,
+                        "resource": null,
+                        "message": "CloudTrail is enabled",
+                        "region": "us-east-1",
+                        "discovered": false,
+                        "created": "2016-10-20T05:46:26.000Z",
+                        "test_id": 2
+                    }
+                ]
+            }
+
 # Group Suppressions
 
 ## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand}]
