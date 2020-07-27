@@ -2403,7 +2403,7 @@ To include more information about the test or key, pass the `expand` parameter.
 
 ### POST - Create a New Suppression [POST]
 
-A suppression always applies to a key via the `key_id` property or to all keys by ommitting
+A suppression always applies to a key via the `key_id` property or to all keys (global) by ommitting
 the `key_id` property. The suppression must then also contain one of the following:
 
 1. `region` - An AWS region to suppress
@@ -2419,6 +2419,9 @@ You may also pass in the following optional fields:
 
 1. `comment` - A note explaining why the suppression is being added
 2. `expires` - A date (`YYYY-MM-DD` format) for when the suppression should expire.
+3. `tags` - An object representing key-value mappings.
+
+When passing `tags`, you must also include `test_id` and `key_id` values.
 
 Note: The API example shown here includes a region, test ID, and resource for
 demonstration purposes only. Valid API requests will only contain one of
