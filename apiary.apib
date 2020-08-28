@@ -626,6 +626,175 @@ modify existing ones.
                 "name": "EC2"
             }
 
+# Group Controls
+
+## Controls Collection [/controls{?limit,offset}]
+
+Controls are a list of required security controls related to a compliance program.
+
+### GET - List All Controls [GET]
+
+A list of all controls that are available in the account, for all programs.
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    'id', 'name', 'created', 'description', 'program_id'
+
+    + `id` (number) - The control ID
+    + `name` (string) - Name of the compliance control
+    + `description` (string) - Description of the compliance control
+    + `created` (date) - The date of the control creation.
+    + `program_id` (number) - The ID of the program to which the control is associated.
+    
+    + Body
+
+            [
+                {
+                  "id": 1,
+                  "name": "Requirement 1 - Firewalls",
+                  "description": "Install and maintain a firewall configuration to protect cardholder data.",
+                  "created": "2020-08-28T14:05:06.000Z",
+                  "program_id": 1
+                },
+                {
+                  "id": 2,
+                  "name": "Requirement 2 - Defaults",
+                  "description": "Do not use vendor-supplied defaults for system passwords and other security parameters.",
+                  "created": "2020-08-28T14:05:06.000Z",
+                  "program_id": 1
+                }
+            ]
+
+### POST - Create a New Control [POST]
+
+Controls can only be created for custom compliance programs (i.e. you cannot create a control on
+a built-in compliance program such as PCI or HIPAA).
+
++ Request (application/json)
+    + `name` (string) - The control name
+    + `description` (string) - The control description.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "My Compliance Control",
+                "description": "Description of the control",
+                "program_id": 10
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The control ID
+    + `name` (string) - The control name
+    + `description` (string) - The control description.
+    + `created` (date) - The date of the control creation
+
+    + Body
+
+            {
+                "id": 1,
+                "name": "My Compliance Control",
+                "description": "Description of the control"
+                "created": "2015-09-01T04:47:57.000Z",
+                "program_id": 10
+            }
+
+## Control [/controls/{id}{?expand}]
+
+### GET - View Control Details [GET]
+
++ Parameters
+    + id (number) - ID of the control
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `test`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The control ID
+    + `name` (string) - The control name
+    + `description` (string) - The control description.
+    + `program_id` (number) - The ID of the program to which the control is associated.
+    
+    + Body
+    
+            {
+                "id": 27,
+                "name": "Test Controls One",
+                "description": "This control shall be implemented by all users",
+                "program_id": 3
+            }
+
+### PUT - Update a Control [PUT]
+
+Controls can be updated by adding or removing mapped tests, or by modifying the name or description.
+
++ Request (application/json)
+    + `name` (string) - The control name
+    + `description` (string) - The control description.
+    + `action` (string) - Whether a plugin is being mapped (`adding`) or unmapped (`removing`)
+    + `test_id` (number) - The ID of the test being mapped or unmapped
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "A new control name",
+                "description": "A new control description",
+                "action": "adding",
+                "test_id": 123
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
+### DELETE - Delete a Control [DELETE]
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                
+            }
+
 # Group Generated IDs
 
 Generated IDs are required to onboard an AWS account via the API. The generated ID is a UUID that
@@ -1806,6 +1975,43 @@ A list of all programs that are available in the account.
                 }
             ]
 
+### POST - Create a New Program [POST]
+
+New custom compliance programs can be created for mapping organizational controls
+to specific groups of plugins.
+
++ Request (application/json)
+    + `name` (string) - The program name
+    + `description` (string) - The program description.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "name": "My Compliance Program",
+                "description": "Description of the program"
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The program ID
+    + `name` (string) - The program name
+    + `description` (string) - The program description.
+    + `created` (date) - The date of the integration creation
+
+    + Body
+
+            {
+                "id": 1,
+                "name": "My Compliance Program",
+                "description": "Description of the program"
+                "created": "2015-09-01T04:47:57.000Z"
+            }
+
 # Group PDF Reports
 
 ## PDF Reports Collection [/pdfs]
@@ -2421,7 +2627,7 @@ You may also pass in the following optional fields:
 2. `expires` - A date (`YYYY-MM-DD` format) for when the suppression should expire.
 3. `tags` - An object representing key-value mappings.
 
-When passing `tags`, you must also include `test_id` and `key_id` values.
+When passing `tags`, you must also include a `test_id` value but NOT `key_id`.
 
 Note: The API example shown here includes a region, test ID, and resource for
 demonstration purposes only. Valid API requests will only contain one of
