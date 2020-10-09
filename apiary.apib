@@ -2903,6 +2903,77 @@ You can modify a test's severity level only at this time.
                 data: {}
             }
 
+# Group Usage
+
+## Usage Collection [/usage{?expand}]
+
+The usage endpoint can be used to obtain unit usage across cloud accounts and image
+registries for billing purposes. If the `expand=usage` querystring is provided, a
+breakdown of the cloud accounts and registries will be returned.
+
+### GET - List All Usage [GET]
+
++ Parameters
+    + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `usage`
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The account ID
+    + `num_allowed_credits` (number) - The total number of units allowed.
+    + `num_consumed_credits` (number) - The total number of units consumed.
+    + `additional_credits` (number) - Whether the account has purchased additional units.
+    + `num_keys` (number) - The number of connected cloud accounts
+    + `num_major_resources` (number) - The total number of scanned resources that count towards unit consumption.
+    + `num_registries_dta` (number) - The number of image registries enrolled in DTA scanning.
+    + `num_registries_vs` (number) - The number of image registries enrolled in image scanning.
+    + `num_repositories_dta` (number) - The number of image repositories enrolled in DTA scanning.
+    + `num_repositories_vs` (number) - The number of image repositories enrolled in image scanning.
+    + `trial_end` (date) - If set, the date the trial ends.
+    + `trial_expired` (boolean) - Whether the trial is expired.
+    + `plan` (object) - An object containing billing plan details.
+    + `detailed` (object) - An object containing a detailed breakdown of unit consumption.
+        + `resource` (string) - Either `cloud_account` or `registry`
+        + `type` (string) - The type of cloud account or registry (aws, azure, google, acr, gcr, etc.)
+        + `name` (string) - The name of the cloud account or registry
+        + `num_consumed_credits` (number) - The number of units consumed by this resource
+
+    + Body
+
+            {
+                "id": 123,
+                "trial_end": null,
+                "trial_expired": false,
+                "plan": {
+                    "id": 58,
+                    "name": "Premier",
+                    "type": "premier",
+                    "credits": 50000
+                },
+                "num_keys": 10,
+                "num_major_resources": 301,
+                "num_registries_vs": 0,
+                "num_repositories_vs": 0,
+                "num_registries_dta": 0,
+                "num_repositories_dta": 0,
+                "additional_credits": 0,
+                "num_allowed_credits": 50000,
+                "num_consumed_credits": 1505,
+                "detailed": [
+                    {
+                        "resource": "cloud_account",
+                        "type": "aws",
+                        "name": "demo-account",
+                        "num_consumed_credits": 300
+                    }
+                ]
+            }
+
 # Group Users
 
 ## Users Collection [/users{?limit,offset,expand}]
