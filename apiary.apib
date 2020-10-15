@@ -1922,6 +1922,253 @@ permanently delete the key before continuing.
                 data: {}
             }
 
+# Group Policies
+
+## Policies Collection [/policies]
+
+Policies are sets of rules that define which plugins should be remediated and how the
+remediation should be performed (manual, automated, or both).
+
+### GET - List All Policies [GET]
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The policy ID
+    + `key_id` (number) - The ID of the key the policy is associated with
+    + `group_id` (number) - The ID of the group the policy is associated with
+    + `key` (object) - The key object
+    + `rules` (array) - A list of rules that are part of the policy
+        + `test_id` (number) - The plugin (test) associated with this rule
+        + `allow_manual` (boolean) - Whether manual remediations are allowed
+        + `allow_automated` (boolean) - Whether automated remediations are allowed
+        + `inputs` (object) - (Optional) - Inputs to pass to the remediation plugin
+    
+    + Body
+    
+            [
+                {
+                    "id": 1,
+                    "key_id": 123,
+                    "group_id": null,
+                    "key": {
+                        
+                    },
+                    "rules": [
+                        {
+                            "test_id": 628,
+                            "allow_manual": true,
+                            "allow_automated": true
+                        },
+                        {
+                            "test_id": 8,
+                            "allow_manual": true,
+                            "allow_automated": false,
+                            "inputs": {
+                                "openSSHReplacementIpAddress": "127.0.0.1/21",
+                                "openSSHReplacementIpv6Address": "fe80:0000:0000:0000:0204:61ff:fe9d:f156/1"
+                            }
+                        }
+                    ]
+                }
+            ]
+
+### POST - Create a New Policy [POST]
+
+To create a remediation policy, define a list of rules (plugins and whether to allow manual and
+automated remediations) combined with either a key_id or group_id to which the rules should be
+applied.
+
++ Request (application/json)
+    + `key_id` (number) - The key to associate the rules to
+    + `group_id` (number) - The group to associate the rules to
+    + `rules` (array) - A list of rules that are part of the policy
+        + `test_id` (number) - The plugin (test) associated with this rule
+        + `allow_manual` (boolean) - Whether manual remediations are allowed
+        + `allow_automated` (boolean) - Whether automated remediations are allowed
+        + `inputs` (object) - (Optional) - Inputs to pass to the remediation plugin
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "key_id": 123,
+                "rules": [
+                    {
+                        "test_id": 628,
+                        "allow_manual": true,
+                        "allow_automated": true
+                    },
+                    {
+                        "test_id": 8,
+                        "allow_manual": true,
+                        "allow_automated": false,
+                        "inputs": {
+                            "openSSHReplacementIpAddress": "127.0.0.1/21",
+                            "openSSHReplacementIpv6Address": "fe80:0000:0000:0000:0204:61ff:fe9d:f156/1"
+                        }
+                    }
+                ]
+            }
+
++ Response 201 (application/json)
+    + `id` (number) - The alert ID
+    + `name` (string) - The name of the group
+    
+    + Body
+
+            {
+                "id": 1,
+                "key_id": 123,
+                "group_id": null,
+                "key": {
+                    
+                },
+                "rules": [
+                    {
+                        "test_id": 628,
+                        "allow_manual": true,
+                        "allow_automated": true
+                    },
+                    {
+                        "test_id": 8,
+                        "allow_manual": true,
+                        "allow_automated": false,
+                        "inputs": {
+                            "openSSHReplacementIpAddress": "127.0.0.1/21",
+                            "openSSHReplacementIpv6Address": "fe80:0000:0000:0000:0204:61ff:fe9d:f156/1"
+                        }
+                    }
+                ]
+            }
+
+## Policy [/policies/{id}]
+
+### GET - View Policy Details [GET]
+
++ Parameters
+    + id (number) - ID of the policy
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The policy ID
+    + `key_id` (number) - The ID of the key the policy is associated with
+    + `group_id` (number) - The ID of the group the policy is associated with
+    + `key` (object) - The key object
+    + `rules` (array) - A list of rules that are part of the policy
+        + `test_id` (number) - The plugin (test) associated with this rule
+        + `allow_manual` (boolean) - Whether manual remediations are allowed
+        + `allow_automated` (boolean) - Whether automated remediations are allowed
+        + `inputs` (object) - (Optional) - Inputs to pass to the remediation plugin
+    
+    + Body
+    
+            {
+                "id": 1,
+                "key_id": 123,
+                "group_id": null,
+                "key": {
+                    
+                },
+                "rules": [
+                    {
+                        "test_id": 628,
+                        "allow_manual": true,
+                        "allow_automated": true
+                    },
+                    {
+                        "test_id": 8,
+                        "allow_manual": true,
+                        "allow_automated": false,
+                        "inputs": {
+                            "openSSHReplacementIpAddress": "127.0.0.1/21",
+                            "openSSHReplacementIpv6Address": "fe80:0000:0000:0000:0204:61ff:fe9d:f156/1"
+                        }
+                    }
+                ]
+            }
+
+### PUT - Update a Policy [PUT]
+
+A policy can be updated by submitting a new list of rules. Key and group assignments cannot be
+changed. If you are modifying the policy rules, be sure to submit the full list of rules that should
+take effect and not just the rule that was changed. The `rules` will overwrite the existing rules
+attached to the policy.
+
++ Request (application/json)
+    + `rules` (array) - A list of rules that are part of the policy
+        + `test_id` (number) - The plugin (test) associated with this rule
+        + `allow_manual` (boolean) - Whether manual remediations are allowed
+        + `allow_automated` (boolean) - Whether automated remediations are allowed
+        + `inputs` (object) - (Optional) - Inputs to pass to the remediation plugin
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "rules": [
+                    {
+                        "test_id": 628,
+                        "allow_manual": true,
+                        "allow_automated": true
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
+### DELETE - Delete a Policy [DELETE]
+
+Once a policy is deleted, the effect will take occur immediately and new remediations will not
+be performed.
+
++ Request (application/json)
+
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
+            }
+
 # Group Programs
 
 ## Programs Collection [/programs{?limit,offset,expand}]
@@ -2052,6 +2299,188 @@ to a program (see GET `/programs` for available compliance program IDs).
 
             {
                 "url": "https://example.s3.amazonaws.com/..."
+            }
+
+# Group Remediations
+
+## Remediations Collection [/remediations{?limit,offset,expand}]
+
+Remediations are reports of remediation changes that have been made in an account.
+
+### GET - List All Remediations [GET]
+
+A list of all remediation reports that have been created in the account.
+
++ Parameters
+    + limit (number, optional) - A limit on the number of responses to return.
+    + offset (number, optional) - An offset value for pagination.
+    + expand (string, optional) - Whether to expand the `action` data associated with the report
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The remediation ID
+    + `created` (date) - The date of the remediation creation
+    + `key_id` (number) - The ID of the key with which the remediation is associated
+    + `comment` (string) - An optional comment about the remediation outcome
+    + `type` (string) - Either `execute` or `rollback`
+    + `num_pass` (number) - Number of passing actions performed in the remediation
+    + `num_fail` (number) - Number of failing actions performed in the remediation
+    + `status` (string) - The current remediation status
+    + `scan_id` (number) - The scan ID performed as part of an automated remediation
+    + `stored_id` (string) - A UUID used to identity the remediation on the backend
+    + `complete` (boolean) - Whether the remediation execution has completed
+    + `event_id` (number) - The event ID that trigged the remediation (automated only)
+    + `key` (object) - An object representing the associated key
+    + `actions` (array) - A list of actions performed in the remediation
+        + `id` (number) - An ID for the action
+        + `region` (string) - The region the remediation action was performed in
+        + `resource` (string) - The cloud resource the remediation impacted
+        + `status` (number) - Either `0` for passing or `2` for failing result of the action
+        + `test_id` (number) - The test ID associated with the remediation action
+        + `result_id` (number) - The result ID associated with the remediation action
+    
+    + Body
+
+            [
+                {
+                    "id": 123,
+                    "key_id": 122,
+                    "comment": null,
+                    "type": "execute",
+                    "num_pass": 1,
+                    "num_fail": 0,
+                    "status": null,
+                    "scan_id": 12345,
+                    "created": "2020-10-12T16:37:16.000Z",
+                    "stored_id": "abcd07cb-563d-4db6-b539-c720d336890f",
+                    "complete": true,
+                    "event_id": 1234,
+                    "key": {
+                        
+                    },
+                    "actions": [
+                        {
+                            "id": 206,
+                            "region": null,
+                            "resource": "arn:aws:s3:::test-bucket",
+                            "status": 0,
+                            "test_id": 628,
+                            "result_id": 123456
+                        }
+                    ]
+                }
+            ]
+
+## Remediation [/remediations/{id}]
+
+### GET - View Remediation Details [GET]
+
++ Parameters
+    + id (number) - ID of the remediation
+
++ Request (application/json)
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+
++ Response 200 (application/json)
+    + `id` (number) - The remediation ID
+    + `created` (date) - The date of the remediation creation
+    + `key_id` (number) - The ID of the key with which the remediation is associated
+    + `comment` (string) - An optional comment about the remediation outcome
+    + `type` (string) - Either `execute` or `rollback`
+    + `num_pass` (number) - Number of passing actions performed in the remediation
+    + `num_fail` (number) - Number of failing actions performed in the remediation
+    + `status` (string) - The current remediation status
+    + `scan_id` (number) - The scan ID performed as part of an automated remediation
+    + `stored_id` (string) - A UUID used to identity the remediation on the backend
+    + `complete` (boolean) - Whether the remediation execution has completed
+    + `event_id` (number) - The event ID that trigged the remediation (automated only)
+    + `key` (object) - An object representing the associated key
+    + `actions` (array) - A list of actions performed in the remediation
+        + `id` (number) - An ID for the action
+        + `region` (string) - The region the remediation action was performed in
+        + `resource` (string) - The cloud resource the remediation impacted
+        + `status` (number) - Either `0` for passing or `2` for failing result of the action
+        + `test_id` (number) - The test ID associated with the remediation action
+        + `result_id` (number) - The result ID associated with the remediation action
+    
+    + Body
+    
+            {
+                "id": 123,
+                "key_id": 122,
+                "comment": null,
+                "type": "execute",
+                "num_pass": 1,
+                "num_fail": 0,
+                "status": null,
+                "scan_id": 12345,
+                "created": "2020-10-12T16:37:16.000Z",
+                "stored_id": "abcd07cb-563d-4db6-b539-c720d336890f",
+                "complete": true,
+                "event_id": 1234,
+                "key": {
+                    
+                },
+                "actions": [
+                    {
+                        "id": 206,
+                        "region": null,
+                        "resource": "arn:aws:s3:::test-bucket",
+                        "status": 0,
+                        "test_id": 628,
+                        "result_id": 123456
+                    }
+                ]
+            }
+
+### POST - Create a New Remediation [POST]
+
+A remediation is triggered by passing a list of `result_ids` which are obtained from a scan report,
+along with a `token_code` representing the OTP MFA token associated with the cloud account during
+the remediation enrollment process.
+
+Additionally, optional inputs can be provided to customize the remediation behavior for the specific
+plugin. These input values can be found on the policies page associated with the plugin being
+remediated.
+
++ Request (application/json)
+    + `result_ids` (array) - A list of result_id values to remediate. NOTE: Currently only one result ID is supported at a time.
+    + `token_code` (string) - The 6-digit MFA token value associated with the remediator deployed in the cloud account.
+    + `input` (object) - Optional. If set, passes customization options to the remediation code.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "result_ids": [123],
+                "token_code": "123456",
+                "input": {
+                    "minPasswordLengthCreatePolicy": 8
+                }
+            }
+
++ Response 201 (application/json)
+    + `id` (string) - A UUID associated with the new remediation
+    
+    + Body
+
+            {
+                "id": "abcdef-1234..."
             }
 
 # Group Routings
