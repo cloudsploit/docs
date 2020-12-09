@@ -1961,6 +1961,49 @@ permanently delete the key before continuing.
                 data: {}
             }
 
+# Group OTP Secrets
+
+This API is a helper API designed to help automate the onboarding of Remediators. It
+returns a pre-generated OTP secret for use in your scripts or onboarding processes.
+
+## OPT Secrets Collection [/otpsecrets]
+
+### POST - Create an OTP Secret [POST]
+
+You may request up to 50 OTP secrets at once.
+
++ Request (application/json)
+    + `count` (number) - (Optional) The number of generated IDs to generate - between `1` and `50`.
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "count": 2
+            }
+
++ Response 201 (application/json)
+    + `otpsecret` (string) - The generated OTP secret
+    + `account_id` (number) - The account ID mapped to the IDs
+    
+    + Body
+
+            [
+                {
+                    "generated_id": "WBXXEDDM2C2TOSU7",
+                    "account_id": 123
+                },
+                {
+                    "generated_id": "ABCXEDDM2C2TOSU5",
+                    "account_id": 123
+                }
+            ]
+
 # Group Policies
 
 ## Policies Collection [/policies]
