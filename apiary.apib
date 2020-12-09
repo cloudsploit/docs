@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.cloudsploit.com/v2
 
-# CloudSploit API
+# Aqua Wave CSPM API
 
-The CloudSploit API allows your applications to interact with the CloudSploit service.
+The Aqua Wave CSPM API (formerly the "CloudSploit" API) allows your applications to interact with the CloudSploit service.
 It is important to note that not all functionality (namely account-level and billing changes) is exposed through the API, so please
 browse the examples below.
 
@@ -1896,6 +1896,45 @@ Both tag keys and tag values must match the regex `^[a-zA-Z0-9_-]{1,100}$`.
                 "errors": [
                     "This account does not have permission to access the requested reseource."
                 ]
+            }
+
++ Request (application/json)
+Connecting a Remediator:
+To connect a remediator to a cloud account, you must pass a `remediation_connection` object
+containing the properties relevant to the cloud (e.g. AWS uses `role_arn` and `external_id`).
+For AWS: Obtain a generated external ID from the Aqua Wave API using the GET "/generatedids"
+endpoint (note: your external ID must match; it cannot be created yourself).
+Then deploy the CloudFormation stack:
+https://s3.amazonaws.com/cloudsploit-remediation-resources-development/develop/aws/cloudformation-template-remediator.json
+
+    + `remediation_connection` (object)
+        + `aws` (object)
+            + `role_arn` - The role ARN of the remediator connection
+            + `external_id` - The external ID of the remediator connection
+            + `version` - The version of the CloudFormation stack deployed (obtained via the stack parameters)
+    
+    + Headers
+    
+            X-API-Key: abc123
+            X-Signature: xyz456
+            X-Timestamp: 12345678910
+            
+    + Body
+    
+            {
+                "role_arn": "arn:aws:iam::012345678911:role/cloudsploit-remediator",
+                "external_id": "65aca4f7-4eae-45a1-879c-56baf2c730b3",
+                "version": "202012083456"
+            }
+
++ Response 200 (application/json)
+    
+    + Body
+
+            {
+                "status": 200,
+                "code": 0,
+                data: {}
             }
 
 ### DELETE - Delete a Key [DELETE]
