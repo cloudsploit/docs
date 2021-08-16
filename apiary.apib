@@ -1108,7 +1108,7 @@ detect security risks in AWS API calls in real-time.
     + end_date (string, optional) - A filter for date range. Format: YYYY-MM-DD.
     + key_id (number, optional) - A filter for the account
     + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`
-    + order (string, optional) - How to order the results by created date. Valid values: asc, desc.
+    + order (string, optional) - How to order the results by order_by column. Valid values: asc, desc.
     + order_by (string, optional) - A column name to order by.
     + page (number, optional) - A number to indicate the page number based on the pagesize.
     + pagesize (number, optional) - Number of records in each page
@@ -1653,7 +1653,7 @@ response will never contain the external ID used with the account.
     + page (number, optional) - The page number to be visited 
     + pagesize (number, optional) - Number of records in each page
     + order_by (string, optional) - A column name to order by on
-    + order (string, optional) - How to order the results by created date. Valid values: asc, desc.
+    + order (string, optional) - How to order the results by order_by column. Valid values: asc, desc.
 
 + Request (application/json)
     + Headers
@@ -3116,7 +3116,7 @@ continuing until the `next` field is null.
 
 # Group Suppressions
 
-## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand}]
+## Suppressions Collection [/suppressions{?limit,offset,key_id,region,test_id,expand,order_by,order,page,pagesize}]
 
 Suppressions are used to prevent certain results from appearing in future scans. For
 example, suppressing us-east-1 would prevent any results from that region from appearing.
@@ -3136,6 +3136,10 @@ To include more information about the test or key, pass the `expand` parameter.
     + expand (string, optional) - Which fields to expand in the API response. Valid values: `key`, `test`.
     + limit (number, optional) - A limit on the number of responses to return.
     + offset (number, optional) - An offset value for pagination.
+    + order (string, optional) - How to order the results by order_by column. Valid values: asc, desc.
+    + order_by (string, optional) - A column name to order by.
+    + page (number, optional) - A number to indicate the page number based on the pagesize.
+    + pagesize (number, optional) - Number of records in each page
 
 + Request (application/json)
     + Headers
@@ -3145,17 +3149,25 @@ To include more information about the test or key, pass the `expand` parameter.
             X-Timestamp: 12345678910
 
 + Response 200 (application/json)
-    + `id` (number) - The suppression ID
-    + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
-    + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
-    + `created` (date) - The date of the suppression creation
-    + `key_id` (number) - The ID of the key for this suppression.
-    + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
-    + `key` (object) - The associated key object.
+    + `count` (number) - The total number of records
+    + `totalPages` (number) - The total number of pages
+    + `pagsize` (number) - Number of records per page
+    + `page` (number) - Current page 
+    + `results` (list) - The list of found suppressions
+        + `id` (number) - The suppression ID
+        + `region` (string) - The AWS region of the suppression. Can be `null` if the suppression is not for a region.
+        + `resource` (string) - The AWS resource of the suppression.  Can be `null` if the suppression is not for a resource.
+        + `created` (date) - The date of the suppression creation
+        + `key_id` (number) - The ID of the key for this suppression.
+        + `test_id` (number) - The ID of the test of the suppression. Can be `null` if the suppression is not for a test.
+        + `key` (object) - The associated key object.
     
     + Body
-
-            [
+            "count": 11,
+            "totalPages": 2,
+            "pagesize": 10,
+            "page": 1,
+            "results": [
                 {
                     "id": 1,
                     "region": "ap-northeast-2",
