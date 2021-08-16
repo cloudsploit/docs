@@ -1091,7 +1091,7 @@ Only a delivery's `send_new_risks` field can be updated.
 
 # Group Events
 
-## Events Collection [/events{?limit,offset,result,region,action,start_date,end_date,key_id,expand,order}]
+## Events Collection [/events{?limit,offset,result,region,action,start_date,end_date,key_id,expand,order_by,order,page,pagesize}]
 
 CloudSploit Events is a Premium Plan feature that integrates with AWS CloudWatch Events to
 detect security risks in AWS API calls in real-time.
@@ -1109,6 +1109,9 @@ detect security risks in AWS API calls in real-time.
     + key_id (number, optional) - A filter for the account
     + expand (string, optional) - Whether the response should contain expanded relations. Valid values: `key`
     + order (string, optional) - How to order the results by created date. Valid values: asc, desc.
+    + order_by (string, optional) - A column name to order by.
+    + page (number, optional) - A number to indicate the page number based on the pagesize.
+    + pagesize (number, optional) - Number of records in each page
 
 + Request (application/json)
     + Headers
@@ -1118,47 +1121,56 @@ detect security risks in AWS API calls in real-time.
             X-Timestamp: 12345678910
 
 + Response 200 (application/json)
-    + `id` (number) - The event ID
-    + `created` (date) - The date of the event creation
-    + `ip_address` (string) - The IP address of the user who created the event in AWS
-    + `action` (string) - The event action from AWS
-    + `caller` (string) - The AWS ARN of the user who created the event in AWS
-    + `details` (string) - More information about the event's severity
-    + `key_id` (number) - The ID of the associated CloudSploit account key
-    + `message` (string) - Information about the event's security classification
-    + `region` (string) - The AWS region the event occurred in (or `global`)
-    + `result` (number) - The event's security classification
-    + `stored_id` (string) - An internal ID used to retrieve the full event details
+    + `count` (number) - The total number of records
+    + `totalPages` (number) - The total number of pages
+    + `pagsize` (number) - Number of records per page
+    + `page` (number) - Current page 
+    + `Events` (list) - list of  events
+        + `id` (number) - The event ID
+        + `created` (date) - The date of the event creation
+        + `ip_address` (string) - The IP address of the user who created the event in AWS
+        + `action` (string) - The event action from AWS
+        + `caller` (string) - The AWS ARN of the user who created the event in AWS
+        + `details` (string) - More information about the event's severity
+        + `key_id` (number) - The ID of the associated CloudSploit account key
+        + `message` (string) - Information about the event's security classification
+        + `region` (string) - The AWS region the event occurred in (or `global`)
+        + `result` (number) - The event's security classification
+        + `stored_id` (string) - An internal ID used to retrieve the full event details
     
     + Body
     
-            [
-                {
-                    "id": 12345,
-                    "created": "2017-05-13T15:45:05.000Z",
-                    "action": "signin:ConsoleLogin",
-                    "region": "global",
-                    "result": 2,
-                    "caller": "arn:aws:iam::012345678911:root",
-                    "ip_address": "12.34.44.33",
-                    "message": "Root user used to log into the account console. The root user was used to make this call.",
-                    "details": null,
-                    "stored_id": "1a503f64-a845-4f59-a047-f8748f930c40",
-                    "key_id": 123,
-                    "key": {
-                        "event_settings": null,
-                        "id": 123,
-                        "name": "demo",
-                        "last_scanned": "2017-05-12T18:26:27.000Z",
-                        "scan_disabled": false,
-                        "role_arn": "arn:aws:iam::012345678911:role/demo",
-                        "paid": true,
-                        "interval": 24,
-                        "created": "2015-09-01T04:47:57.000Z",
-                        "group_id": 1
-                    }
+        "count": 63506,
+        "totalPages": 6351,
+        "pagesize": 10,
+        "page": 1,
+        "events": [
+             {
+                "id": 12345,
+                "created": "2017-05-13T15:45:05.000Z",
+                "action": "signin:ConsoleLogin",
+                "region": "global",
+                "result": 2,
+                "caller": "arn:aws:iam::012345678911:root",
+                "ip_address": "12.34.44.33",
+                "message": "Root user used to log into the account console. The root user was used to make this call.",
+                "details": null,
+                "stored_id": "1a503f64-a845-4f59-a047-f8748f930c40",
+                "key_id": 123,
+                "key": {
+                    "event_settings": null,
+                    "id": 123,
+                    "name": "demo",
+                    "last_scanned": "2017-05-12T18:26:27.000Z",
+                    "scan_disabled": false,
+                    "role_arn": "arn:aws:iam::012345678911:role/demo",
+                    "paid": true,
+                    "interval": 24,
+                    "created": "2015-09-01T04:47:57.000Z",
+                    "group_id": 1
                 }
-            ]
+            },
+        ]    
 
 ## Event [/events/{id}]
 
