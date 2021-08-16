@@ -1125,7 +1125,7 @@ detect security risks in AWS API calls in real-time.
     + `totalPages` (number) - The total number of pages
     + `pagsize` (number) - Number of records per page
     + `page` (number) - Current page 
-    + `Events` (list) - list of  events
+    + `Events` (list) - list of  events with the following details
         + `id` (number) - The event ID
         + `created` (date) - The date of the event creation
         + `ip_address` (string) - The IP address of the user who created the event in AWS
@@ -1635,7 +1635,7 @@ be sent within 5 minutes.
 
 # Group Keys
 
-## Keys Collection [/keys{?limit,offset,paid,cloud}]
+## Keys Collection [/keys{?limit,offset,paid,cloud,page,pagesize,order_by,order}]
 
 Keys are AWS accounts that are connected to CloudSploit. Do not confuse these with AWS
 access keys or with CloudSploit API keys.
@@ -1650,6 +1650,10 @@ response will never contain the external ID used with the account.
     + offset (number, optional) - An offset value for pagination.
     + paid (boolean, optional) - An offset value for pagination.
     + cloud (string, optional) - A cloud filter (`aws`, `azure`)
+    + page (number, optional) - The page number to be visited 
+    + pagesize (number, optional) - Number of records in each page
+    + order_by (string, optional) - A column name to order by on
+    + order (string, optional) - How to order the results by created date. Valid values: asc, desc.
 
 + Request (application/json)
     + Headers
@@ -1659,22 +1663,30 @@ response will never contain the external ID used with the account.
             X-Timestamp: 12345678910
 
 + Response 200 (application/json)
-    + `id` (number) - The key ID
-    + `name` (string) - The key name
-    + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
-    + `last_scanned` (date) - The date of the last background scan
-    + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
-    + `role_arn` (string) - The AWS role ARN for the connection
-    + `paid` (boolean) - Whether the connected account is upgraded for CloudSploit features
-    + `cloudtrail_connected` (boolean) - Whether CloudTrail integration has been enabled (Note: this feature is not currently live)
-    + `interval` (number) - How often the account is scanned, in hours
-    + `created` (date) - The date of the integration creation
-    + `group_id` (number) - The ID of the group with which the key is associated
-    + `group` (object) - The group object
+    + `count` (number) - Total number of records
+    + `totalPages` (number) - The total number of pages
+    + `pagsize` (number) - Number of records per page
+    + `page` (number) - Current page 
+    + `keys` (list) - List of keys
+        + `id` (number) - The key ID
+        + `name` (string) - The key name
+        + `cloud` (string) - The key cloud (`aws`, `azure`, etc).
+        + `last_scanned` (date) - The date of the last background scan
+        + `scan_disabled` (boolean) - Whether the scanning of this key has been disabled by CloudSploit
+        + `role_arn` (string) - The AWS role ARN for the connection
+        + `paid` (boolean) - Whether the connected account is upgraded for CloudSploit features
+        + `cloudtrail_connected` (boolean) - Whether CloudTrail integration has been enabled (Note: this feature is not currently live)
+        + `interval` (number) - How often the account is scanned, in hours
+        + `created` (date) - The date of the integration creation
+        + `group_id` (number) - The ID of the group with which the key is associated
+        + `group` (object) - The group object
     
     + Body
-
-            [
+            "count": 6,
+            "totalPages": 1,
+            "pagesize": 10,
+            "page": 1,
+            "keys":[
                 {
                     "id": 1,
                     "name": "cloudsploit-demo",
